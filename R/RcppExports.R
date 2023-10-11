@@ -7,8 +7,9 @@
 #'
 #' @param data Dataframe in long table form. The first and second columns are labels and the third column stores the distance values.
 #' @param symmetric Whether the distance matrix are symmetric (if cost matrix is not, then the distance matrix is also not).
-#' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangule positions in the result is filled.
+#' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result is filled.
 #' @examples
+#' data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 #' mat <- long2squareform(data)
 long2squareform <- function(data, symmetric = TRUE) {
     .Call(`_lingdist_long2squareform`, data, symmetric)
@@ -18,12 +19,14 @@ long2squareform <- function(data, symmetric = TRUE) {
 #'
 #' Compute edit distance between two strings and get all possible alignment scenarios. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
 #'
-#' @param str1, str2 Strings to be compared.
+#' @param str1 String to be compared.
+#' @param str2 String to be compared.
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 #' @param return_alignments Whether to return alignment details
-#' @return A list contains `distance` attribution storing the distance result. If `return_alignments` is TRUE, then a `alignments` attribution is present which is a list of dataframes with each stroing a possible best alignment scenario.
+#' @return A list contains `distance` attribution storing the distance result. If `return_alignments` is TRUE, then a `alignments` attribution is present which is a list of dataframes with each storing a possible best alignment scenario.
 #' @examples
+#' cost.mat <- data.frame()
 #' dist <- edit_dist_string("leaf","leaves")$distance
 #' dist <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
 #' alignments <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
@@ -42,9 +45,12 @@ edit_dist_string <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' @param symmetric Whether to the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
-#' @return A dataframe in long talbe form if `sqaureform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long talbe form has \eqn{C_n^2} rows otherwis \eqn{n^2} rows.
+#' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows otherwise \eqn{n^2} rows.
 #' @examples
+#' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+#' cost.mat <- data.frame()
 #' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_")
+#' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 edit_dist_df <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L) {
     .Call(`_lingdist_edit_dist_df`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads)
@@ -59,6 +65,8 @@ edit_dist_df <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' @param delim The delimiter separating atomic symbols.
 #' @return A string vector containing the missing characters, empty indicating there's no missing characters.
 #' @examples
+#' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+#' cost.mat <- data.frame()
 #' chars.not.found <- check_cost_defined(df, cost.mat, "_")
 check_cost_defined <- function(data, cost_mat, delim = "") {
     .Call(`_lingdist_check_cost_defined`, data, cost_mat, delim)
@@ -72,6 +80,7 @@ check_cost_defined <- function(data, cost_mat, delim = "") {
 #' @param delim The delimiter separating atomic symbols.
 #' @return Cost matrix contains all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 #' @examples
+#' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
 #' default.cost <- generate_default_cost_matrix(df, "_")
 generate_default_cost_matrix <- function(data, delim = "") {
     .Call(`_lingdist_generate_default_cost_matrix`, data, delim)

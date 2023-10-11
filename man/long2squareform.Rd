@@ -12,11 +12,12 @@ long2squareform(data, symmetric = TRUE)
 \item{symmetric}{Whether the distance matrix are symmetric (if cost matrix is not, then the distance matrix is also not).}
 }
 \value{
-Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangule positions in the result is filled.
+Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result is filled.
 }
 \description{
 Convert a distance dataframe in long table form to a square matrix form.
 }
 \examples{
+data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 mat <- long2squareform(data)
 }

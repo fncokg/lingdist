@@ -30,12 +30,15 @@ edit_dist_df(
 \item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
 }
 \value{
-A dataframe in long talbe form if `sqaureform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long talbe form has \eqn{C_n^2} rows otherwis \eqn{n^2} rows.
+A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows otherwise \eqn{n^2} rows.
 }
 \description{
 Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 }
 \examples{
+df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+cost.mat <- data.frame()
 result <- edit_dist_df(df, cost_mat=cost.mat, delim="_")
+result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 }

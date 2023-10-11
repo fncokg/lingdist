@@ -16,12 +16,14 @@ using namespace Rcpp;
 
 std::string EMPTY("_NULL_");
 std::string DELIM("_#_");
+
 ////R functions////
 
 /*
     Wrapper of R `strsplit` function.
 */
-str_vec split(const String &str, const String &delim)
+str_vec
+split(const String &str, const String &delim)
 {
     Function r_strsplit("strsplit");
     List result = r_strsplit(str, delim);
@@ -59,10 +61,10 @@ cost_umap mat2umap(const DataFrame &cost_mat)
     StringVector _col_names = cost_mat.names();
     str_vec row_names = as<str_vec>(_row_names);
     str_vec col_names = as<str_vec>(_col_names);
-    for (int col = 0; col < col_names.size(); col++)
+    for (std::size_t col = 0; col < col_names.size(); col++)
     {
         NumericVector this_col = cost_mat[col];
-        for (int row = 0; row < row_names.size(); row++)
+        for (std::size_t row = 0; row < row_names.size(); row++)
         {
             std::string key = col_names[col] + DELIM + row_names[row];
             umap[key] = this_col[row];
@@ -73,7 +75,7 @@ cost_umap mat2umap(const DataFrame &cost_mat)
 
 void free_2d_arr_memory(double **arr, int nrow)
 {
-    for (std::size_t i = 0; i < nrow; i++)
+    for (int i = 0; i < nrow; i++)
     {
         delete[] arr[i];
     }
@@ -228,7 +230,7 @@ std::vector<std::vector<point>> get_matched_paths(std::vector<std::vector<double
         this_y = next_points[0].second;
         if (next_points.size() > 1)
         {
-            for (int i = 1; i < next_points.size(); i++)
+            for (std::size_t i = 1; i < next_points.size(); i++)
             {
                 stack.push_back(std::make_pair(next_points[i], this_path));
             }
@@ -270,8 +272,9 @@ double edit_dist_row(const std::vector<str_vec> &row1, const std::vector<str_vec
 //'
 //' @param data Dataframe in long table form. The first and second columns are labels and the third column stores the distance values.
 //' @param symmetric Whether the distance matrix are symmetric (if cost matrix is not, then the distance matrix is also not).
-//' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangule positions in the result is filled.
+//' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result is filled.
 //' @examples
+//' data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 //' mat <- long2squareform(data)
 //[[Rcpp::export]]
 DataFrame long2squareform(const DataFrame &data, bool symmetric = true)
@@ -290,7 +293,7 @@ DataFrame long2squareform(const DataFrame &data, bool symmetric = true)
     StringVector names;
     std::unordered_map<String, int> char2idx;
     DataFrame result;
-    for (int i = 0; i < unique_chars.size(); i++)
+    for (std::size_t i = 0; i < unique_chars.size(); i++)
     {
         char2idx[unique_chars[i]] = i;
         names.push_back(unique_chars[i]);
@@ -332,7 +335,7 @@ List get_string_alignment(const str_vec &chars1, const str_vec &chars2, const co
     {
         StringVector chars1_col, chars2_col, operation_col;
         NumericVector cost_col, cumcost_col;
-        for (int j = 1; j < path.size(); j++)
+        for (std::size_t j = 1; j < path.size(); j++)
         {
             this_x = path[j].first;
             this_y = path[j].second;
@@ -358,12 +361,14 @@ List get_string_alignment(const str_vec &chars1, const str_vec &chars2, const co
 //'
 //' Compute edit distance between two strings and get all possible alignment scenarios. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
 //'
-//' @param str1, str2 Strings to be compared.
+//' @param str1 String to be compared.
+//' @param str2 String to be compared.
 //' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
 //' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 //' @param return_alignments Whether to return alignment details
-//' @return A list contains `distance` attribution storing the distance result. If `return_alignments` is TRUE, then a `alignments` attribution is present which is a list of dataframes with each stroing a possible best alignment scenario.
+//' @return A list contains `distance` attribution storing the distance result. If `return_alignments` is TRUE, then a `alignments` attribution is present which is a list of dataframes with each storing a possible best alignment scenario.
 //' @examples
+//' cost.mat <- data.frame()
 //' dist <- edit_dist_string("leaf","leaves")$distance
 //' dist <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
 //' alignments <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
@@ -402,9 +407,12 @@ List edit_dist_string(const String &str1, const String &str2, Nullable<DataFrame
 //' @param symmetric Whether to the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 //' @param parallel Whether to parallelize the computation.
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
-//' @return A dataframe in long talbe form if `sqaureform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long talbe form has \eqn{C_n^2} rows otherwis \eqn{n^2} rows.
+//' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows otherwise \eqn{n^2} rows.
 //' @examples
+//' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+//' cost.mat <- data.frame()
 //' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_")
+//' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
 DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2) // const DataFrame &cost_mat
@@ -415,7 +423,7 @@ DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         DataFrame cost_mat_ = DataFrame(cost_mat);
         cost = mat2umap(cost_mat_);
     }
-    int nrows = data.nrow(), ncols = data.ncol();
+    int nrows = data.nrow();
     CharacterVector rownames = data.attr("row.names");
     StringVector lab1Col, lab2Col;
 
@@ -470,7 +478,7 @@ DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
     }
     else
     {
-        for (std::int32_t idx = 0; idx < row_pairs.size(); idx++)
+        for (std::size_t idx = 0; idx < row_pairs.size(); idx++)
         {
             std::pair<int, int> &row_pair = row_pairs[idx];
             bar++;
@@ -514,6 +522,8 @@ str_vec get_all_unique_chars(const DataFrame &data, const String &delim = "")
 //' @param delim The delimiter separating atomic symbols.
 //' @return A string vector containing the missing characters, empty indicating there's no missing characters.
 //' @examples
+//' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+//' cost.mat <- data.frame()
 //' chars.not.found <- check_cost_defined(df, cost.mat, "_")
 //[[Rcpp::export]]
 StringVector check_cost_defined(const DataFrame &data, const DataFrame &cost_mat, const String &delim = "")
@@ -549,6 +559,7 @@ StringVector check_cost_defined(const DataFrame &data, const DataFrame &cost_mat
 //' @param delim The delimiter separating atomic symbols.
 //' @return Cost matrix contains all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 //' @examples
+//' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
 //' default.cost <- generate_default_cost_matrix(df, "_")
 //[[Rcpp::export]]
 DataFrame generate_default_cost_matrix(const DataFrame &data, const String &delim = "")

@@ -18,5 +18,6 @@ Cost matrix contains all possible characters in the raw data with all diagonal v
 generate a default cost matrix contains all possible characters in the raw data with all diagonal values set to 0 and others set to 1. This avoids you constructing the matrix from scratch.
 }
 \examples{
+df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
 default.cost <- generate_default_cost_matrix(df, "_")
 }

@@ -20,5 +20,7 @@ A string vector containing the missing characters, empty indicating there's no m
 Check whether there's missing characters in the cost matrix and return the missing characters.
 }
 \examples{
+df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+cost.mat <- data.frame()
 chars.not.found <- check_cost_defined(df, cost.mat, "_")
 }
