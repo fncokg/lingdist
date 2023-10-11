@@ -1,5 +1,3 @@
-// [[Rcpp::plugins(cpp11)]]
-// [[Rcpp::depends(RcppThread)]]
 #define point std::pair<int, int>
 #define points std::vector<point>
 #define double_points std::pair<double, points>

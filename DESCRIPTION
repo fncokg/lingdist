@@ -11,3 +11,4 @@ Imports: Rcpp (>= 1.0.10)
 LinkingTo: Rcpp,RcppThread
 Encoding: UTF-8
 RoxygenNote: 7.2.3
+SystemRequirements: C++11
