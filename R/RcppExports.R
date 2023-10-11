@@ -28,8 +28,8 @@ long2squareform <- function(data, symmetric = TRUE) {
 #' @examples
 #' cost.mat <- data.frame()
 #' dist <- edit_dist_string("leaf","leaves")$distance
-#' dist <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
-#' alignments <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
+#' dist <- edit_dist_string("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
+#' alignments <- edit_dist_string("ph_l_i_z","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
 edit_dist_string <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE) {
     .Call(`_lingdist_edit_dist_string`, str1, str2, cost_mat, delim, return_alignments)
 }

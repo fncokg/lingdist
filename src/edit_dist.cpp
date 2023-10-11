@@ -370,8 +370,8 @@ List get_string_alignment(const str_vec &chars1, const str_vec &chars2, const co
 //' @examples
 //' cost.mat <- data.frame()
 //' dist <- edit_dist_string("leaf","leaves")$distance
-//' dist <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
-//' alignments <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
+//' dist <- edit_dist_string("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
+//' alignments <- edit_dist_string("ph_l_i_z","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
 //[[Rcpp::export]]
 List edit_dist_string(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false)
 {

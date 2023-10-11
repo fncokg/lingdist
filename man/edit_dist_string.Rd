@@ -32,6 +32,6 @@ Compute edit distance between two strings and get all possible alignment scenari
 \examples{
 cost.mat <- data.frame()
 dist <- edit_dist_string("leaf","leaves")$distance
-dist <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
-alignments <- edit_dist_string("pʰ_l_i_z̥","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
+dist <- edit_dist_string("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
+alignments <- edit_dist_string("ph_l_i_z","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
 }
