@@ -1,0 +1,27 @@
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA: fatal: detected dubious ownership in repository at 'D:/程序项目/R/lingdist'
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA: To add an exception for this directory, call:
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA:
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA: git config --global --add safe.directory 'D:/程序项目/R/lingdist'
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA:
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA: Set the environment variable GIT_TEST_DEBUG_UNSAFE_DIRECTORIES=true and run
+
+Version: 1.0
+Date: 2023-10-11 12:47:04 UTC
+SHA: again for more information.
