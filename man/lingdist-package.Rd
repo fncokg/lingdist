@@ -6,6 +6,18 @@
 \alias{lingdist-package}
 \title{lingdist: Fast Linguistic Distance and Alignment Computation}
 \description{
-A fast generalized edit distance and string alignment computation mainly for linguistic aims. As a generalization to the classic edit distance algorithms, the package allows user to define custom cost for every symbol's insertion, deletion, and substitution. The package also allows character combinations in any length to be seen as a single symbol which is very useful for IPA transcriptions with diacritics. In addition to edit distance result, users can get detailed alignment information such as all possible alignment scenarios between two strings which is useful for testing ,illustration or any further usage. Either distance matrix or its long table form can be obtained and tools to do such conversions are provided. All functions in the package are implemented in C++ and the distance matrix computation is parallelized leveraging the 'RcppThread' package.
+A fast generalized edit distance and string alignment computation mainly for linguistic aims. As a generalization to the classic edit distance algorithms, the package allows users to define custom cost for every symbol's insertion, deletion, and substitution. The package also allows character combinations in any length to be seen as a single symbol which is very useful for International Phonetic Alphabet (IPA) transcriptions with diacritics. In addition to edit distance result, users can get detailed alignment information such as all possible alignment scenarios between two strings which is useful for testing, illustration or any further usage. Either the distance matrix or its long table form can be obtained and tools to do such conversions are provided. All functions in the package are implemented in 'C++' and the distance matrix computation is parallelized leveraging the 'RcppThread' package.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/fncokg/lingdist}
+  \item Report bugs at \url{https://github.com/fncokg/lingdist/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Chao Kong \email{kongchao1998@gmail.com} (\href{https://orcid.org/0000-0002-6404-6142}{ORCID})
+
 }
 \keyword{internal}
