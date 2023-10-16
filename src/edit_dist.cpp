@@ -20,8 +20,7 @@ std::string DELIM("_#_");
 /*
     Wrapper of R `strsplit` function.
 */
-str_vec
-split(const String &str, const String &delim)
+str_vec split(const String &str, const String &delim)
 {
     Function r_strsplit("strsplit");
     List result = r_strsplit(str, delim);
@@ -244,7 +243,8 @@ double edit_dist_row(const std::vector<str_vec> &row1, const std::vector<str_vec
     int nword = 0;
     for (std::size_t coli = 0; coli < ncols; coli++)
     {
-        const str_vec &chars1 = row1[coli], &chars2 = row2[coli];
+        const str_vec &chars1 = row1[coli];
+        const str_vec &chars2 = row2[coli];
 
         if (chars1.size() != 0 && chars2.size() != 0)
         {
