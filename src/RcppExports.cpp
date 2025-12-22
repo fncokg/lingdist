@@ -26,6 +26,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pw_edit_dist
+DataFrame pw_edit_dist(const DataFrame& data, Nullable<DataFrame> cost_mat, const String& delim, bool squareform, bool symmetric, bool parallel, int n_threads);
+RcppExport SEXP _lingdist_pw_edit_dist(SEXP dataSEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP symmetricSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Nullable<DataFrame> >::type cost_mat(cost_matSEXP);
+    Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
+    Rcpp::traits::input_parameter< bool >::type squareform(squareformSEXP);
+    Rcpp::traits::input_parameter< bool >::type symmetric(symmetricSEXP);
+    Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // generate_default_cost_matrix
 DataFrame generate_default_cost_matrix(const DataFrame& data, const String& delim);
 RcppExport SEXP _lingdist_generate_default_cost_matrix(SEXP dataSEXP, SEXP delimSEXP) {
@@ -53,6 +70,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_lingdist_edit_dist_string", (DL_FUNC) &_lingdist_edit_dist_string, 5},
+    {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 7},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 2},
     {NULL, NULL, 0}

@@ -45,7 +45,7 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2)
+    DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads)
     {
         lingdist::CostTable cost;
         if (cost_mat.isNotNull())

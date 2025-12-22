@@ -195,7 +195,7 @@ namespace
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim = "", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool verbose = true)
+    List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool verbose)
     {
         if (verbose)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", data.nrow());
@@ -272,6 +272,10 @@ namespace lingdist
             dists[idx] = results[idx].distance;
         }
         DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
+        if (squareform)
+        {
+            result = lingdist::long2squareform(result, true);
+        }
         report["result"] = result;
         report["cost"] = cost.to_dataframe();
         report["prev_cost"] = prev_cost.to_dataframe();
