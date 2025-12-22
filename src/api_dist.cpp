@@ -25,10 +25,11 @@ namespace
 //'
 //' @param str1 String to be compared.
 //' @param str2 String to be compared.
-//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
+//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also [generate_default_cost_matrix()] to generate a default cost matrix.
 //' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 //' @param return_alignments Whether to return alignment details
 //' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
+//' @seealso [generate_default_cost_matrix()]
 //' @examples
 //' cost.mat <- data.frame()
 //' dist <- edit_dist_string("leaf","leaves")$distance
@@ -71,7 +72,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
-//' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+//' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 //' cost.mat <- data.frame()
 //' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_")
 //' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
@@ -93,14 +94,15 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 //' @param max_epochs Maximum number of epochs for EM algorithm.
 //' @param tol Tolerance for convergence.
-//' @param alignment_max_paths Maximum number of paths to consider in alignment.
-//' @param verbose Whether to print progress.
+//' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each EM epoch.
+//' @param verbose Whether to print more detailed computation messages, useful for tracking long computations and debugging.
 //' @return A list containing the following components:
 //' \item{result}{A dataframe of distances, either in long table form or square form.}
-//' \item{cost}{The final cost matrix used for distance calculation.}
-//' \item{prev_cost}{The cost matrix from the previous iteration.}
+//' \item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
+//' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
+//' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 //' @examples
-//' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+//' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 //' result <- pw_pmi_dist(df, delim="_")
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)

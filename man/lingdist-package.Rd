@@ -6,7 +6,7 @@
 \alias{lingdist-package}
 \title{lingdist: Fast Linguistic Distance and Alignment Computation}
 \description{
-A fast generalized edit distance and string alignment computation mainly for linguistic aims. As a generalization to the classic edit distance algorithms, the package allows users to define custom cost for every symbol's insertion, deletion, and substitution. The package also allows character combinations in any length to be seen as a single symbol which is very useful for International Phonetic Alphabet (IPA) transcriptions with diacritics. In addition to edit distance result, users can get detailed alignment information such as all possible alignment scenarios between two strings which is useful for testing, illustration or any further usage. Either the distance matrix or its long table form can be obtained and tools to do such conversions are provided. All functions in the package are implemented in 'C++' and the distance matrix computation is parallelized leveraging the 'RcppThread' package.
+A fast linguistic distance and alignment computation package. It implements generalized edit distance, Pointwise Mutual Information (PMI) distance, and Weighted Jaccard Distance (WJD). For generalized edit distance, the package allows users to define custom cost for every symbol's insertion, deletion, and substitution, and supports treating character combinations as single symbols (e.g., IPA with diacritics). It also provides detailed alignment information. PMI distance automatically learns costs from data. WJD is suitable for hierarchical categorical data with multiple forms. All functions are implemented in 'C++' and distance matrix computation is parallelized leveraging the 'RcppThread' package.
 }
 \seealso{
 Useful links:

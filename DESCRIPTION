@@ -16,4 +16,4 @@ LinkingTo: Rcpp,RcppThread
 URL: https://github.com/fncokg/lingdist
 BugReports: https://github.com/fncokg/lingdist/issues
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

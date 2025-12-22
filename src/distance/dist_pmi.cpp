@@ -224,7 +224,7 @@ namespace lingdist
             else
                 Rprintf("Using single-threaded computation.\n");
         }
-
+        double sum_diff, mean_diff;
         std::vector<lingdist::AlignmentResult> results(n_row_pairs);
         for (int iepoch = 1; iepoch <= max_epochs; iepoch++)
         {
@@ -251,7 +251,8 @@ namespace lingdist
                 Rprintf("Updating cost table...\n");
             prev_cost = cost;
             update_cost_table(results, cost, char_map);
-            double sum_diff = 0.0, mean_diff;
+            // Check convergence
+            sum_diff = 0.0;
             for (size_t idx = 0; idx < cost.data.size(); ++idx)
             {
                 sum_diff += std::fabs(cost.data[idx] - prev_cost.data[idx]);
@@ -266,6 +267,12 @@ namespace lingdist
                 break;
             }
         }
+        if (mean_diff >= tol)
+        {
+            Function warning("warning");
+            warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
+        }
+
         std::vector<double> dists(row_pairs.size());
         for (std::size_t idx = 0; idx < row_pairs.size(); idx++)
         {
@@ -277,8 +284,10 @@ namespace lingdist
             result = lingdist::long2squareform(result, true);
         }
         report["result"] = result;
-        report["cost"] = cost.to_dataframe();
-        report["prev_cost"] = prev_cost.to_dataframe();
+        // Note: when we finish the iteration, i.e. we finish the last update of cost table, the cost table we used to compute distances is actually the previous one.
+        report["cost"] = prev_cost.to_dataframe();
+        report["sum_diff"] = sum_diff;
+        report["mean_diff"] = mean_diff;
         if (verbose)
             Rprintf("PMI distance computation completed.\n");
         return report;

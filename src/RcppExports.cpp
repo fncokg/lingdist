@@ -62,6 +62,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pw_wjd
+DataFrame pw_wjd(const DataFrame& data, Nullable<NumericVector> cate_level_weights, Nullable<NumericVector> multi_form_weights, const String& form_delim, const String& cate_delim, bool squareform, bool parallel, int n_threads);
+RcppExport SEXP _lingdist_pw_wjd(SEXP dataSEXP, SEXP cate_level_weightsSEXP, SEXP multi_form_weightsSEXP, SEXP form_delimSEXP, SEXP cate_delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type cate_level_weights(cate_level_weightsSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type multi_form_weights(multi_form_weightsSEXP);
+    Rcpp::traits::input_parameter< const String& >::type form_delim(form_delimSEXP);
+    Rcpp::traits::input_parameter< const String& >::type cate_delim(cate_delimSEXP);
+    Rcpp::traits::input_parameter< bool >::type squareform(squareformSEXP);
+    Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_wjd(data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
 // generate_default_cost_matrix
 DataFrame generate_default_cost_matrix(const DataFrame& data, const String& delim);
 RcppExport SEXP _lingdist_generate_default_cost_matrix(SEXP dataSEXP, SEXP delimSEXP) {
@@ -91,6 +109,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 5},
     {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 7},
     {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 9},
+    {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 8},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 2},
     {NULL, NULL, 0}
