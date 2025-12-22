@@ -110,7 +110,25 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squarefor
     return lingdist::pmi_df(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose);
 }
 
-DataFrame wjd_df(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2)
+//' Compute Weighted Jaccard Distance between all row pairs of a dataframe
+//'
+//' Compute Weighted Jaccard Distance (WJD) between all row pairs of a dataframe. This metric is suitable for categorical data with hierarchical structure and multiple forms.
+//' For example, a cell value "A_2_a#A_3#B_5_c" indicates there are 3 word forms for this lexical item. The first form "A_2_a" belongs to category A, subcategory 2, and sub-subcategory a. The second form "A_3" belongs to category A and subcategory 3. The third form "B_5_c" belongs to category B, subcategory 5, and sub-subcategory c. The delimiters can be customized via `form_delim` and `cate_delim`.
+//'
+//' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
+//' @param cate_level_weights Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". If not provided, default weights are used.
+//' @param multi_form_weights Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. If not provided, default weights are used.
+//' @param form_delim The delimiter separating different word forms of a single lexical item. Default is "#".
+//' @param cate_delim The delimiter separating different levels of categories within a word form. Default is "_".
+//' @param squareform Whether to return a dataframe in squareform.
+//' @param parallel Whether to parallelize the computation.
+//' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+//' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
+//' @examples
+//' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
+//' result <- pw_wjd(df, form_delim="#", cate_delim="_")
+//[[Rcpp::export]]
+DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2)
 {
     std::vector<double> cate_weights, form_weights;
     cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);

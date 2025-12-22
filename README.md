@@ -11,6 +11,7 @@ In general:
 Supported Algorithms:
 - **Generalized Edit Distance**: Supports custom cost assignments, treating strings as single symbols (e.g., IPA transcriptions), and returning detailed alignment results.
 - **PMI Distance**: Computes distances based on Pointwise Mutual Information, automatically learning costs from the data using an EM algorithm.
+- **Weighted Jaccard Distance**: Computes distances for categorical data with hierarchical structure and multiple forms (e.g., "A_2_a#A_3").
 
 # Installation
 
@@ -67,6 +68,21 @@ To compute PMI distances which learn costs from the data:
 
 ```r
 result <- pw_pmi_dist(df, delim = "_", parallel = TRUE, n_threads = 4)
+```
+
+## Pairwise Weighted Jaccard Distances
+
+To compute Weighted Jaccard Distances for hierarchical categorical data:
+
+```r
+# Data with hierarchical structure (e.g. Category_Subcategory) and multiple forms (separated by #)
+df_wjd <- as.data.frame(rbind(
+  lang1 = c("A_1#B_2", "C_3"),
+  lang2 = c("A_1", "C_3_x")
+))
+
+# Compute WJD
+result <- pw_wjd(df_wjd, form_delim = "#", cate_delim = "_", parallel = TRUE)
 ```
 
 ## Utilities
