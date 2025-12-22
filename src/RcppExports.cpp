@@ -11,9 +11,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// edit_dist_string
-List edit_dist_string(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, bool return_alignments);
-RcppExport SEXP _lingdist_edit_dist_string(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP return_alignmentsSEXP) {
+// string_edit_dist
+List string_edit_dist(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, bool return_alignments);
+RcppExport SEXP _lingdist_string_edit_dist(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP return_alignmentsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Nullable<DataFrame> >::type cost_mat(cost_matSEXP);
     Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
     Rcpp::traits::input_parameter< bool >::type return_alignments(return_alignmentsSEXP);
-    rcpp_result_gen = Rcpp::wrap(edit_dist_string(str1, str2, cost_mat, delim, return_alignments));
+    rcpp_result_gen = Rcpp::wrap(string_edit_dist(str1, str2, cost_mat, delim, return_alignments));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -40,6 +40,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
     rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pw_pmi_dist
+List pw_pmi_dist(const DataFrame& data, const String& delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool verbose);
+RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP alignment_max_pathsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
+    Rcpp::traits::input_parameter< bool >::type squareform(squareformSEXP);
+    Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    Rcpp::traits::input_parameter< int >::type max_epochs(max_epochsSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type alignment_max_paths(alignment_max_pathsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -69,8 +88,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_lingdist_edit_dist_string", (DL_FUNC) &_lingdist_edit_dist_string, 5},
+    {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 5},
     {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 7},
+    {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 9},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 2},
     {NULL, NULL, 0}

@@ -10,14 +10,14 @@
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 #' @param return_alignments Whether to return alignment details
-#' @return A list contains `distance` attribution storing the distance result. If `return_alignments` is TRUE, then a `alignments` attribution is present which is a list of dataframes with each storing a possible best alignment scenario.
+#' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 #' @examples
 #' cost.mat <- data.frame()
 #' dist <- edit_dist_string("leaf","leaves")$distance
 #' dist <- edit_dist_string("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
 #' alignments <- edit_dist_string("ph_l_i_z","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
-edit_dist_string <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE) {
-    .Call(`_lingdist_edit_dist_string`, str1, str2, cost_mat, delim, return_alignments)
+string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE) {
+    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments)
 }
 
 #' Compute edit distance between all row pairs of a dataframe
@@ -28,10 +28,10 @@ edit_dist_string <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
 #' @param delim The delimiter separating atomic symbols.
 #' @param squareform Whether to return a dataframe in squareform.
-#' @param symmetric Whether to the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
+#' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
-#' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows otherwise \eqn{n^2} rows.
+#' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
 #' cost.mat <- data.frame()
@@ -42,13 +42,39 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
     .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads)
 }
 
+#' Compute PMI distance between all row pairs of a dataframe
+#'
+#' Compute PMI (Pointwise Mutual Information) distance between all row pairs of a dataframe.
+#'
+#' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
+#' @param delim The delimiter separating atomic symbols.
+#' @param squareform Whether to return a dataframe in squareform.
+#' @param parallel Whether to parallelize the computation.
+#' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+#' @param max_epochs Maximum number of epochs for EM algorithm.
+#' @param tol Tolerance for convergence.
+#' @param alignment_max_paths Maximum number of paths to consider in alignment.
+#' @param verbose Whether to print progress.
+#' @return A list containing the following components:
+#' \item{result}{A dataframe of distances, either in long table form or square form.}
+#' \item{cost}{The final cost matrix used for distance calculation.}
+#' \item{prev_cost}{The cost matrix from the previous iteration.}
+#' @examples
+#' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
+#' result <- pw_pmi_dist(df, delim="_")
+#' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
+#' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
+pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, verbose = TRUE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose)
+}
+
 #' Generate a default cost matrix
 #'
-#' generate a default cost matrix contains all possible characters in the raw data with all diagonal values set to 0 and others set to 1. This avoids you constructing the matrix from scratch.
+#' Generate a default cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1. This avoids constructing the matrix from scratch.
 #'
 #' @param data DataFrame to be computed.
 #' @param delim The delimiter separating atomic symbols.
-#' @return Cost matrix contains all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
+#' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("a_bc_d","d_bc_a"),b=c("b_bc_d","d_bc_a")))
 #' default.cost <- generate_default_cost_matrix(df, "_")
@@ -61,8 +87,8 @@ generate_default_cost_matrix <- function(data, delim = "") {
 #' Convert a distance dataframe in long table form to a square matrix form.
 #'
 #' @param data Dataframe in long table form. The first and second columns are labels and the third column stores the distance values.
-#' @param symmetric Whether the distance matrix are symmetric (if cost matrix is not, then the distance matrix is also not).
-#' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result is filled.
+#' @param symmetric Whether the distance matrix is symmetric (if cost matrix is not, then the distance matrix is also not).
+#' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result are filled.
 #' @examples
 #' data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 #' mat <- long2squareform(data)

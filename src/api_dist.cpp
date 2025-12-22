@@ -1,9 +1,23 @@
 #include <Rcpp.h>
+#include <math.h>
 
 #include "alignment.hpp"
 #include "dist.hpp"
 
 using namespace Rcpp;
+
+namespace
+{
+    inline std::vector<double> make_default_weights(int n)
+    {
+        std::vector<double> weights;
+        for (int i = 0; i < n; ++i)
+        {
+            weights.push_back(std::pow(0.5, i));
+        }
+        return weights;
+    }
+}
 
 //' Compute edit distance between two strings
 //'
@@ -94,4 +108,12 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool verbose = true)
 {
     return lingdist::pmi_df(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose);
+}
+
+DataFrame wjd_df(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2)
+{
+    std::vector<double> cate_weights, form_weights;
+    cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);
+    form_weights = multi_form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(multi_form_weights)) : make_default_weights(10);
+    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, squareform, parallel, n_threads);
 }

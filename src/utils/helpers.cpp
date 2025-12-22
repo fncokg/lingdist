@@ -23,17 +23,6 @@ namespace lingdist
 
     StrVec split(const String &target, const String &delim)
     {
-        // std::string ctarget = target.get_cstring();
-        // std::string cdelim = delim.get_cstring();
-        // StrVec out;
-        // size_t pos = 0, dlen = cdelim.size();
-        // while ((pos = ctarget.find(cdelim, pos)) != std::string::npos)
-        // {
-        //     out.emplace_back(ctarget.substr(0, pos));
-        //     ctarget.erase(0, pos + dlen);
-        // }
-        // out.emplace_back(ctarget);
-        // return out;
         Function r_split("strsplit");
         List res = r_split(target, delim);
         return res[0];
@@ -52,6 +41,30 @@ namespace lingdist
             {
                 const StrVec &col = data[j];
                 row_vector.push_back(split(col[i], delim));
+            }
+            rows_vector.push_back(std::move(row_vector));
+        }
+        return rows_vector;
+    }
+
+    std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2)
+    {
+        int nrows = data.nrow(), ncols = data.ncol();
+        std::vector<std::vector<std::vector<StrVec>>> rows_vector;
+        rows_vector.reserve(nrows);
+        for (int i = 0; i < nrows; i++)
+        {
+            std::vector<std::vector<StrVec>> row_vector;
+            row_vector.reserve(ncols);
+            for (int j = 0; j < ncols; j++)
+            {
+                const StrVec &col = data[j];
+                std::vector<StrVec> cell_vector;
+                for (auto &part : split(col[i], delim1))
+                {
+                    cell_vector.push_back(split(part, delim2));
+                }
+                row_vector.push_back(std::move(cell_vector));
             }
             rows_vector.push_back(std::move(row_vector));
         }

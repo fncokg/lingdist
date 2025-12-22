@@ -10,4 +10,7 @@ namespace lingdist
 
     DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2);
 
+    DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
+                     const std::vector<double> &multi_form_weights, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2);
+
 }
