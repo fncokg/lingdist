@@ -23,7 +23,7 @@ namespace
                 return cate_level_weights[i];
             }
         }
-        // ["A2"] vs ["A2","a"]
+        // ["A","2"] vs ["A","2","a"]
         return cate_level_weights[min_len - 1];
     }
 
