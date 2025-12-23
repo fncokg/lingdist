@@ -34,7 +34,7 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
-#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' cost.mat <- data.frame()
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
@@ -62,7 +62,7 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 #' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 #' @examples
-#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
@@ -99,7 +99,7 @@ pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, f
 #' @param delim The delimiter separating atomic symbols.
 #' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 #' @examples
-#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' default.cost <- generate_default_cost_matrix(df, "_")
 generate_default_cost_matrix <- function(data, delim = "") {
     .Call(`_lingdist_generate_default_cost_matrix`, data, delim)

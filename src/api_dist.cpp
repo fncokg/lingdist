@@ -72,7 +72,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
-//' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+//' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' cost.mat <- data.frame()
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
@@ -102,7 +102,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 //' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 //' @examples
-//' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+//' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' result <- pw_pmi_dist(df, delim="_")
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)

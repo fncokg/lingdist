@@ -36,7 +36,7 @@ A dataframe in long table form if `squareform` is FALSE, otherwise in squareform
 Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 }
 \examples{
-df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 cost.mat <- data.frame()
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
