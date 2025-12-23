@@ -32,7 +32,6 @@ namespace
                    const std::vector<double> &cate_level_weights,
                    const std::vector<double> &multi_form_weights)
     {
-        // WARNING: we assume that `multi_form_weights` is normalized, i.e. sum to 1.0. Here, we do not check it for efficiency.
         double sum_dist = 0.0, nitems = 0.0;
         if (row1.size() != row2.size() || row1.size() == 0)
             return 0.0;
@@ -44,15 +43,23 @@ namespace
             size_t nforms1 = cells1.size(), nforms2 = cells2.size();
             if (nforms1 != 0 && nforms2 != 0)
             {
+                double this_dist = 0.0, sum_weights = 0.0;
                 size_t max_len = std::max(nforms1, nforms2);
                 for (size_t i = 0; i < max_len; i++)
                 {
                     const auto &form1 = i < nforms1 ? cells1[i] : cells1.back();
                     const auto &form2 = i < nforms2 ? cells2[i] : cells2.back();
-                    sum_dist += wjd_form(form1, form2, cate_level_weights) * multi_form_weights[i];
+                    this_dist += wjd_form(form1, form2, cate_level_weights) * multi_form_weights[i];
+                    // only the first max_len weights are counted
+                    sum_weights += multi_form_weights[i];
                 }
+                if (sum_weights > 0.0)
+                {
+                    this_dist /= sum_weights;
+                }
+                sum_dist += this_dist;
+                nitems += 1.0;
             }
-            nitems += 1.0;
         }
         return nitems > 0.0 ? sum_dist / nitems : 0.0;
     }
@@ -69,20 +76,12 @@ namespace lingdist
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
-        // Normalize multi_form_weights
-        double weight_sum = 0.0;
-        for (const auto &w : multi_form_weights)
-            weight_sum += w;
-        std::vector<double> multi_form_weights_normalized;
-        for (const auto &w : multi_form_weights)
-            multi_form_weights_normalized.push_back(w / weight_sum);
-
         std::vector<double> dists(row_pairs.size());
         RcppThread::ProgressBar bar(row_pairs.size(), 1);
         std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
             auto [rowi, rowj] = row_pairs[idx];
-            dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights_normalized);
+            dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
             bar++;
         };
         if (parallel)
