@@ -46,8 +46,8 @@ A list containing the following components:
 Compute PMI (Pointwise Mutual Information) distance between all row pairs of a dataframe.
 }
 \examples{
-df <- as.data.frame(rbind(a = c("pʰ_l_i_z̥", "k_o_l"), b = c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
-result <- pw_pmi_dist(df, delim = "_")
-result <- pw_pmi_dist(df, delim = "_", squareform = TRUE)
-result <- pw_pmi_dist(df, delim = "_", parallel = TRUE, n_threads = 4)
+df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+result <- pw_pmi_dist(df, delim="_")
+result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
+result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 }

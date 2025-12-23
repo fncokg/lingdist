@@ -7,15 +7,16 @@
 #'
 #' @param str1 String to be compared.
 #' @param str2 String to be compared.
-#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also `generate_default_cost_matrix()` to generate a default cost matrix.
+#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also [generate_default_cost_matrix()] to generate a default cost matrix.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 #' @param return_alignments Whether to return alignment details
 #' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
+#' @seealso [generate_default_cost_matrix()]
 #' @examples
 #' cost.mat <- data.frame()
-#' dist <- edit_dist_string("leaf", "leaves")$distance
-#' dist <- edit_dist_string("ph_l_i_z", "p_l_i_s", cost_mat = cost.mat, delim = "_")$distance
-#' alignments <- edit_dist_string("ph_l_i_z", "p_l_i_s", delim = "_", return_alignments = TRUE)$alignments
+#' dist <- string_edit_dist("leaf","leaves")$distance
+#' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
+#' alignments <- res$alignments
 string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE) {
     .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments)
 }
@@ -25,7 +26,7 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also `generate_default_cost_matrix()` to generate a default cost matrix.
+#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
 #' @param delim The delimiter separating atomic symbols.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
@@ -33,11 +34,11 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
-#' df <- as.data.frame(rbind(a = c("pʰ_l_i_z̥", "k_o_l"), b = c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 #' cost.mat <- data.frame()
-#' result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_")
-#' result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_", squareform = TRUE)
-#' result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_", parallel = TRUE, n_threads = 4)
+#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
+#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
+#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L) {
     .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads)
 }
@@ -61,10 +62,10 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 #' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 #' @examples
-#' df <- as.data.frame(rbind(a = c("pʰ_l_i_z̥", "k_o_l"), b = c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
-#' result <- pw_pmi_dist(df, delim = "_")
-#' result <- pw_pmi_dist(df, delim = "_", squareform = TRUE)
-#' result <- pw_pmi_dist(df, delim = "_", parallel = TRUE, n_threads = 4)
+#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' result <- pw_pmi_dist(df, delim="_")
+#' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
+#' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, verbose = TRUE) {
     .Call(`_lingdist_pw_pmi_dist`, data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose)
 }
@@ -84,8 +85,8 @@ pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, 
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
 #' @examples
-#' df <- as.data.frame(rbind(a = c("A_1#B_2", "C_3"), b = c("A_1", "C_3_x")))
-#' result <- pw_wjd(df, form_delim = "#", cate_delim = "_")
+#' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
+#' result <- pw_wjd(df, form_delim="#", cate_delim="_")
 pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", squareform = FALSE, parallel = FALSE, n_threads = 2L) {
     .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads)
 }
@@ -98,7 +99,7 @@ pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, f
 #' @param delim The delimiter separating atomic symbols.
 #' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 #' @examples
-#' df <- as.data.frame(rbind(a = c("pʰ_l_i_z̥", "k_o_l"), b = c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+#' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 #' default.cost <- generate_default_cost_matrix(df, "_")
 generate_default_cost_matrix <- function(data, delim = "") {
     .Call(`_lingdist_generate_default_cost_matrix`, data, delim)
@@ -112,8 +113,9 @@ generate_default_cost_matrix <- function(data, delim = "") {
 #' @param symmetric Whether the distance matrix is symmetric (if cost matrix is not, then the distance matrix is also not).
 #' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result are filled.
 #' @examples
-#' data <- as.data.frame(list(chars1 = c("a", "a", "b"), chars2 = c("b", "c", "c"), dist = c(1, 2, 3)))
+#' data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 #' mat <- long2squareform(data)
 long2squareform <- function(data, symmetric = TRUE) {
     .Call(`_lingdist_long2squareform`, data, symmetric)
 }
+

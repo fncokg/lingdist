@@ -32,9 +32,9 @@ namespace
 //' @seealso [generate_default_cost_matrix()]
 //' @examples
 //' cost.mat <- data.frame()
-//' dist <- edit_dist_string("leaf","leaves")$distance
-//' dist <- edit_dist_string("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")$distance
-//' alignments <- edit_dist_string("ph_l_i_z","p_l_i_s",delim="_",return_alignments=TRUE)$alignments
+//' dist <- string_edit_dist("leaf","leaves")$distance
+//' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
+//' alignments <- res$alignments
 //[[Rcpp::export]]
 List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false)
 {
@@ -74,9 +74,9 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @examples
 //' df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 //' cost.mat <- data.frame()
-//' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_")
-//' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-//' result <- edit_dist_df(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
+//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
+//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
+//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
 DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2)
 {

@@ -17,7 +17,7 @@ pw_edit_dist(
 \arguments{
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
-\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also `generate_default_cost_matrix()` to generate a default cost matrix.}
+\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.}
 
 \item{delim}{The delimiter separating atomic symbols.}
 
@@ -36,9 +36,9 @@ A dataframe in long table form if `squareform` is FALSE, otherwise in squareform
 Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 }
 \examples{
-df <- as.data.frame(rbind(a = c("pʰ_l_i_z̥", "k_o_l"), b = c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
+df <- as.data.frame(rbind(a=c("pʰ_l_i_z̥","k_o_l"),b=c("pʰ_l̥_i_z̥", "k_ɑ_lˠ")))
 cost.mat <- data.frame()
-result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_")
-result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_", squareform = TRUE)
-result <- edit_dist_df(df, cost_mat = cost.mat, delim = "_", parallel = TRUE, n_threads = 4)
+result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
+result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
+result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
 }

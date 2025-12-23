@@ -2,9 +2,11 @@ PKG_LIBS = `"$(R_HOME)/bin/Rscript" -e "RcppThread::LdFlags()"`
 
 PKG_CPPFLAGS = -I./alignment -I./distance -I./dp -I./utils -I./api_wrappers
 
-SRC_CPP = $(wildcard *.cpp) $(wildcard */*.cpp)
-
-OBJECTS = $(SRC_CPP:.cpp=.o)
+OBJECTS = alignment/alignment.o \
+	distance/dist_lev.o distance/dist_pmi.o distance/dist_wjd.o \
+	dp/dp.o \
+	utils/helpers.o utils/cost_table.o \
+	api_dist.o api_utils.o RcppExports.o
 
 CXX = g++
 CXX_STD = CXX17

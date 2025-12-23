@@ -18,6 +18,6 @@ Dataframe in square matrix form, rownames and colnames are labels. If the long t
 Convert a distance dataframe in long table form to a square matrix form.
 }
 \examples{
-data <- as.data.frame(list(chars1 = c("a", "a", "b"), chars2 = c("b", "c", "c"), dist = c(1, 2, 3)))
+data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 mat <- long2squareform(data)
 }

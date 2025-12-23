@@ -40,6 +40,6 @@ Compute Weighted Jaccard Distance (WJD) between all row pairs of a dataframe. Th
 For example, a cell value "A_2_a#A_3#B_5_c" indicates there are 3 word forms for this lexical item. The first form "A_2_a" belongs to category A, subcategory 2, and sub-subcategory a. The second form "A_3" belongs to category A and subcategory 3. The third form "B_5_c" belongs to category B, subcategory 5, and sub-subcategory c. The delimiters can be customized via `form_delim` and `cate_delim`.
 }
 \examples{
-df <- as.data.frame(rbind(a = c("A_1#B_2", "C_3"), b = c("A_1", "C_3_x")))
-result <- pw_wjd(df, form_delim = "#", cate_delim = "_")
+df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
+result <- pw_wjd(df, form_delim="#", cate_delim="_")
 }

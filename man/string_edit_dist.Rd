@@ -17,7 +17,7 @@ string_edit_dist(
 
 \item{str2}{String to be compared.}
 
-\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also `generate_default_cost_matrix()` to generate a default cost matrix.}
+\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also [generate_default_cost_matrix()] to generate a default cost matrix.}
 
 \item{delim}{The delimiter in `str1` and `str2` separating atomic symbols.}
 
@@ -31,7 +31,10 @@ Compute edit distance between two strings and get all possible alignment scenari
 }
 \examples{
 cost.mat <- data.frame()
-dist <- edit_dist_string("leaf", "leaves")$distance
-dist <- edit_dist_string("ph_l_i_z", "p_l_i_s", cost_mat = cost.mat, delim = "_")$distance
-alignments <- edit_dist_string("ph_l_i_z", "p_l_i_s", delim = "_", return_alignments = TRUE)$alignments
+dist <- string_edit_dist("leaf","leaves")$distance
+res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
+alignments <- res$alignments
+}
+\seealso{
+[generate_default_cost_matrix()]
 }
