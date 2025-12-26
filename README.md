@@ -88,7 +88,8 @@ result <- pw_wjd(df_wjd, form_delim = "#", cate_delim = "_", parallel = TRUE)
 ## Utilities
 
 - `generate_default_cost_matrix(data, delim)`: Generate a default cost matrix from data.
-- `long2squareform(data, symmetric)`: Convert long table distance result to square matrix.
+- `long2squareform(data, symmetric, default_diag)`: Convert long table distance result to square matrix.
+- `check_cost_mat_symbols(cost_mat, data, delim)`: Check which symbols in `data` are missing from a cost matrix.
 
 For more details and other APIs, refer to the documentation.
 
