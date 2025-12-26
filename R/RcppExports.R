@@ -26,21 +26,22 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
+#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, a default cost matrix is built with substitution cost 1.0 and insertion/deletion cost 1.0. See also `generate_default_cost_matrix()` to generate a default cost matrix.
 #' @param delim The delimiter separating atomic symbols.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+#' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' cost.mat <- data.frame()
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads)
+#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe
@@ -107,15 +108,37 @@ generate_default_cost_matrix <- function(data, delim = "") {
 
 #' Convert long table to square form
 #'
-#' Convert a distance dataframe in long table form to a square matrix form.
+#' Convert a distance dataframe in long table form to a square matrix form. Values in the diagonal positions are automatically filled with `default_diag`. If you want self-defined diagonal values, define them in the long table.
 #'
 #' @param data Dataframe in long table form. The first and second columns are labels and the third column stores the distance values.
 #' @param symmetric Whether the distance matrix is symmetric (if cost matrix is not, then the distance matrix is also not).
+#' @param default_diag The default value to fill in the diagonal positions. By default it is 0.0.
 #' @return Dataframe in square matrix form, rownames and colnames are labels. If the long table only contains \eqn{C_n^2} rows and `symmetric` is set to FALSE, then only lower triangle positions in the result are filled.
 #' @examples
 #' data <- as.data.frame(list(chars1=c("a","a","b"),chars2=c("b","c","c"),dist=c(1,2,3)))
 #' mat <- long2squareform(data)
-long2squareform <- function(data, symmetric = TRUE) {
-    .Call(`_lingdist_long2squareform`, data, symmetric)
+long2squareform <- function(data, symmetric = TRUE, default_diag = 0.0) {
+    .Call(`_lingdist_long2squareform`, data, symmetric, default_diag)
+}
+
+#' Check which symbols in `data` are missing from a cost matrix
+#'
+#' Given a cost matrix (square-form DataFrame) and a data table of tokenized strings,
+#' return a character vector of symbols that appear in `data` but are not present in the
+#' cost matrix row/column names. This is useful to validate a user-supplied cost matrix
+#' before running distance computations.
+#'
+#' @param cost_mat DataFrame representing a cost matrix in square form. Row names and
+#'   column names should be the symbols included in the matrix.
+#' @param data DataFrame containing the tokenized strings; used to extract symbols to check.
+#' @param delim String delimiter used in `data` to split atomic symbols (empty string means
+#'   split by characters).
+#' @return A character vector of symbols that are present in `data` but missing from `cost_mat`.
+#' @examples
+#' cost.mat <- data.frame()
+#' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"), b=c("b_l_i_s","k_a:_l")))
+#' missing <- check_cost_mat_symbols(cost.mat, df, "_")
+check_cost_mat_symbols <- function(cost_mat, data, delim) {
+    .Call(`_lingdist_check_cost_mat_symbols`, cost_mat, data, delim)
 }
 

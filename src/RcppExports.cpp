@@ -27,8 +27,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pw_edit_dist
-DataFrame pw_edit_dist(const DataFrame& data, Nullable<DataFrame> cost_mat, const String& delim, bool squareform, bool symmetric, bool parallel, int n_threads);
-RcppExport SEXP _lingdist_pw_edit_dist(SEXP dataSEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP symmetricSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP) {
+DataFrame pw_edit_dist(const DataFrame& data, Nullable<DataFrame> cost_mat, const String& delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost);
+RcppExport SEXP _lingdist_pw_edit_dist(SEXP dataSEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP symmetricSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP check_missing_costSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -39,7 +39,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type symmetric(symmetricSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads));
+    Rcpp::traits::input_parameter< bool >::type check_missing_cost(check_missing_costSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -93,25 +94,40 @@ BEGIN_RCPP
 END_RCPP
 }
 // long2squareform
-DataFrame long2squareform(const DataFrame& data, bool symmetric);
-RcppExport SEXP _lingdist_long2squareform(SEXP dataSEXP, SEXP symmetricSEXP) {
+DataFrame long2squareform(const DataFrame& data, bool symmetric, double default_diag);
+RcppExport SEXP _lingdist_long2squareform(SEXP dataSEXP, SEXP symmetricSEXP, SEXP default_diagSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< bool >::type symmetric(symmetricSEXP);
-    rcpp_result_gen = Rcpp::wrap(long2squareform(data, symmetric));
+    Rcpp::traits::input_parameter< double >::type default_diag(default_diagSEXP);
+    rcpp_result_gen = Rcpp::wrap(long2squareform(data, symmetric, default_diag));
+    return rcpp_result_gen;
+END_RCPP
+}
+// check_cost_mat_symbols
+StringVector check_cost_mat_symbols(const DataFrame& cost_mat, const DataFrame& data, const String& delim);
+RcppExport SEXP _lingdist_check_cost_mat_symbols(SEXP cost_matSEXP, SEXP dataSEXP, SEXP delimSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const DataFrame& >::type cost_mat(cost_matSEXP);
+    Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
+    rcpp_result_gen = Rcpp::wrap(check_cost_mat_symbols(cost_mat, data, delim));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 5},
-    {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 7},
+    {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 8},
     {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 9},
     {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 8},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
-    {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 2},
+    {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 3},
+    {"_lingdist_check_cost_mat_symbols", (DL_FUNC) &_lingdist_check_cost_mat_symbols, 3},
     {NULL, NULL, 0}
 };
 
