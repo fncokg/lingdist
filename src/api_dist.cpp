@@ -64,7 +64,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 //'
 //' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1.
+//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, a default cost matrix is built with substitution cost 1.0 and insertion/deletion cost 1.0. See also `generate_default_cost_matrix()` to generate a default cost matrix.
 //' @param delim The delimiter separating atomic symbols.
 //' @param squareform Whether to return a dataframe in squareform.
 //' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
@@ -80,7 +80,19 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //[[Rcpp::export]]
 DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2)
 {
-    return lingdist::edit_dist_df(data, cost_mat, delim, squareform, symmetric, parallel, n_threads);
+    lingdist::CostTable cost;
+    if (cost_mat.isNotNull())
+    {
+        DataFrame cost_mat_ = DataFrame(cost_mat);
+        cost = lingdist::build_cost_table(cost_mat_);
+    }
+    else
+    {
+        lingdist::StrVec chars = lingdist::get_all_unique_chars(data, delim);
+        chars.push_back(lingdist::EMPTY);
+        cost = lingdist::build_default_cost_table(chars);
+    }
+    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe

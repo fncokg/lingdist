@@ -45,21 +45,8 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads)
+    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads)
     {
-        lingdist::CostTable cost;
-        if (cost_mat.isNotNull())
-        {
-            DataFrame cost_mat_ = DataFrame(cost_mat);
-            cost = lingdist::build_cost_table(cost_mat_);
-        }
-        else
-        {
-            lingdist::StrVec chars = lingdist::get_all_unique_chars(data, delim);
-            chars.push_back(lingdist::EMPTY);
-            cost = lingdist::build_default_cost_table(chars);
-        }
-
         auto rows_vector = lingdist::split_df(data, delim);
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, symmetric);
 
