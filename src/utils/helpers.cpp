@@ -144,7 +144,7 @@ namespace lingdist
                 col2[char2idx[char1]] = dist;
             }
         }
-        for (int i = 0; i < nrow; i++)
+        for (int i = 0; i < unique_chars.size(); i++)
         {
             NumericVector col = result[i];
             if (NumericVector::is_na(col[i]))
