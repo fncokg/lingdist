@@ -45,8 +45,22 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads)
+    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost)
     {
+        if (check_missing_cost)
+        {
+            lingdist::StrVec missing_symbols = cost.check_missing_symbols(data, delim);
+            if (!missing_symbols.empty())
+            {
+                std::string missing_symbols_str;
+                for (const auto &s : missing_symbols)
+                {
+                    missing_symbols_str += s + ", ";
+                }
+                Rprintf("Warning: The cost table is missing the following symbols found in the data: %s. Cost values for these symbols will be treated as 1.0 (deletion/insertion/substitution) or 0.0 (matching) by default.\n",
+                        missing_symbols_str.c_str());
+            }
+        }
         auto rows_vector = lingdist::split_df(data, delim);
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, symmetric);
 

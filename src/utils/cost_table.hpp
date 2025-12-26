@@ -38,6 +38,8 @@ namespace lingdist
         {
             return data[get_index(c, r)];
         }
+
+        lingdist::StrVec check_missing_symbols(const DataFrame &data, const String &delim) const;
     };
 
     // 从 DataFrame 构建 CostTable（允许列名与行名集合不同）

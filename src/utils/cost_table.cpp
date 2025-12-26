@@ -6,6 +6,20 @@ using namespace Rcpp;
 
 namespace lingdist
 {
+    lingdist::StrVec CostTable::check_missing_symbols(const DataFrame &data, const String &delim) const
+    {
+        lingdist::StrVec unique_chars = lingdist::get_all_unique_chars(data, delim);
+        unique_chars.push_back(lingdist::EMPTY);
+        lingdist::StrVec missing_chars;
+        for (const auto &ch : unique_chars)
+        {
+            if (colIndex.find(ch) == colIndex.end() || rowIndex.find(ch) == rowIndex.end())
+            {
+                missing_chars.push_back(ch);
+            }
+        }
+        return missing_chars;
+    }
 
     CostTable build_cost_table(const DataFrame &cost_mat)
     {

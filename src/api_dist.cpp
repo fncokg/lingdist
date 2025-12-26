@@ -70,15 +70,16 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 //' @param parallel Whether to parallelize the computation.
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+//' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' cost.mat <- data.frame()
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4)
+//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -92,7 +93,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         chars.push_back(lingdist::EMPTY);
         cost = lingdist::build_default_cost_table(chars);
     }
-    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads);
+    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe

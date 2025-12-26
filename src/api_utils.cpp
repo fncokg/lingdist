@@ -38,3 +38,28 @@ DataFrame long2squareform(const DataFrame &data, bool symmetric = true)
 {
     return lingdist::long2squareform(data, symmetric);
 }
+
+//' Check which symbols in `data` are missing from a cost matrix
+//'
+//' Given a cost matrix (square-form DataFrame) and a data table of tokenized strings,
+//' return a character vector of symbols that appear in `data` but are not present in the
+//' cost matrix row/column names. This is useful to validate a user-supplied cost matrix
+//' before running distance computations.
+//'
+//' @param cost_mat DataFrame representing a cost matrix in square form. Row names and
+//'   column names should be the symbols included in the matrix.
+//' @param data DataFrame containing the tokenized strings; used to extract symbols to check.
+//' @param delim String delimiter used in `data` to split atomic symbols (empty string means
+//'   split by characters).
+//' @return A character vector of symbols that are present in `data` but missing from `cost_mat`.
+//' @examples
+//' cost.mat <- data.frame()
+//' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"), b=c("b_l_i_s","k_a:_l")))
+//' missing <- check_cost_mat_symbols(cost.mat, df, "_")
+//[[Rcpp::export]]
+StringVector check_cost_mat_symbols(const DataFrame &cost_mat, const DataFrame &data, const String &delim)
+{
+    lingdist::CostTable cost_table = lingdist::build_cost_table(cost_mat);
+    lingdist::StrVec missing_symbols = cost_table.check_missing_symbols(data, delim);
+    return StringVector::import(missing_symbols.begin(), missing_symbols.end());
+}
