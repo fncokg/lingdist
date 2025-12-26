@@ -109,7 +109,7 @@ namespace lingdist
         return StrVec(unique_chars.begin(), unique_chars.end());
     }
 
-    DataFrame long2squareform(const DataFrame &data, bool symmetric)
+    DataFrame long2squareform(const DataFrame &data, bool symmetric, double default_diag)
     {
         StringVector chars1_col = data[0];
         StringVector chars2_col = data[1];
@@ -142,6 +142,14 @@ namespace lingdist
             {
                 NumericVector col2 = result[char2idx[char2]];
                 col2[char2idx[char1]] = dist;
+            }
+        }
+        for (int i = 0; i < nrow; i++)
+        {
+            NumericVector col = result[i];
+            if (NumericVector::is_na(col[i]))
+            {
+                col[i] = default_diag;
             }
         }
         result.attr("row.names") = names;

@@ -41,7 +41,7 @@ namespace lingdist
     // --- DataFrame Utils ---
 
     // Convert long-form (lab1, lab2, dist) to square DataFrame
-    Rcpp::DataFrame long2squareform(const Rcpp::DataFrame &data, bool symmetric);
+    Rcpp::DataFrame long2squareform(const Rcpp::DataFrame &data, bool symmetric, double default_diag = 0.0);
 
     std::tuple<StringVector, StringVector, std::vector<std::pair<int, int>>> get_row_pairs(const DataFrame &data, bool symmetric);
 
