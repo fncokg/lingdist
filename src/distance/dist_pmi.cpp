@@ -224,7 +224,7 @@ namespace lingdist
             else
                 Rprintf("Using single-threaded computation.\n");
         }
-        double sum_diff, mean_diff;
+        double sum_diff = 0.0, mean_diff = 0.0;
         std::vector<lingdist::AlignmentResult> results(n_row_pairs);
         for (int iepoch = 1; iepoch <= max_epochs; iepoch++)
         {
