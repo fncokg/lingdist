@@ -47,7 +47,7 @@ namespace lingdist
 
     DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost)
     {
-        if (check_missing_cost)
+        if (check_missing_cost && !cost.is_fast)
         {
             lingdist::StrVec missing_symbols = cost.check_missing_symbols(data, delim);
             if (!missing_symbols.empty())

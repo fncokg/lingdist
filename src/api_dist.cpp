@@ -64,22 +64,26 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 //'
 //' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, a default cost matrix is built with substitution cost 1.0 and insertion/deletion cost 1.0. See also `generate_default_cost_matrix()` to generate a default cost matrix.
+//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 //' @param delim The delimiter separating atomic symbols.
 //' @param squareform Whether to return a dataframe in squareform.
 //' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 //' @param parallel Whether to parallelize the computation.
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 //' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
+//' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
+//' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' cost.mat <- data.frame()
+//' result <- pw_edit_dist(df, delim="_")
+//' result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -91,7 +95,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
     {
         lingdist::StrVec chars = lingdist::get_all_unique_chars(data, delim);
         chars.push_back(lingdist::EMPTY);
-        cost = lingdist::build_default_cost_table(chars);
+        cost = lingdist::build_fast_cost_table(chars, default_sub_cost, default_ins_del_cost);
     }
     return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost);
 }
