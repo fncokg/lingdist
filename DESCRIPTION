@@ -7,8 +7,8 @@ Authors@R:
              role = c("aut", "cre"),
              email = "kongchao1998@gmail.com",
              comment = c(ORCID = "0000-0002-6404-6142")))
-Version: 2.1.0
-Date: 2025-12-22
+Version: 2.2.0
+Date: 2025-12-28
 Description: A fast linguistic distance and alignment computation package. It implements generalized edit distance, Pointwise Mutual Information (PMI) distance, and Weighted Jaccard Distance (WJD). For generalized edit distance, the package allows users to define custom cost for every symbol's insertion, deletion, and substitution, and supports treating character combinations as single symbols (e.g., IPA with diacritics). It also provides detailed alignment information. PMI distance automatically learns costs from data. WJD is suitable for hierarchical categorical data with multiple forms. All functions are implemented in 'C++' and distance matrix computation is parallelized leveraging the 'RcppThread' package.
 License: GPL (>= 2)
 Imports: Rcpp (>= 1.0.10)
