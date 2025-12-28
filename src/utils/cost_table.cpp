@@ -47,6 +47,7 @@ namespace lingdist
             cindexer[col_names[i]] = i;
             rindexer[row_names[i]] = i;
         }
+        table.sym_index = rindexer;
 
         for (auto &sym1 : table.syms)
         {
