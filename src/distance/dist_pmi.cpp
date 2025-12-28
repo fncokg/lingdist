@@ -226,7 +226,8 @@ namespace lingdist
         }
         double sum_diff = 0.0, mean_diff = 0.0;
         std::vector<lingdist::AlignmentResult> results(n_row_pairs);
-        for (int iepoch = 1; iepoch <= max_epochs; iepoch++)
+        int iepoch;
+        for (iepoch = 1; iepoch <= max_epochs; iepoch++)
         {
             if (verbose)
                 Rprintf("Epoch %d/%d\n", iepoch, max_epochs);
@@ -287,6 +288,8 @@ namespace lingdist
         report["cost"] = prev_cost.to_dataframe();
         report["sum_diff"] = sum_diff;
         report["mean_diff"] = mean_diff;
+        report["converged"] = mean_diff < tol;
+        report["n_epochs"] = iepoch;
         if (verbose)
             Rprintf("PMI distance computation completed.\n");
         return report;
