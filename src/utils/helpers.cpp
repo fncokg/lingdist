@@ -94,57 +94,67 @@ namespace lingdist
         return std::make_tuple(lab1Col, lab2Col, row_pairs);
     }
 
-    StrVec get_all_unique_chars(const DataFrame &data, const String &delim)
+    StrVec get_all_unique_syms(const DataFrame &data, const String &delim, bool include_empty)
     {
         auto rows_vector = split_df(data, delim);
-        StrVec all_chars;
+        StrVec all_syms;
         for (auto &row : rows_vector)
         {
-            for (auto &chars : row)
+            for (auto &syms : row)
             {
-                all_chars.insert(all_chars.end(), chars.begin(), chars.end());
+                all_syms.insert(all_syms.end(), syms.begin(), syms.end());
             }
         }
-        std::set<std::string> unique_chars(all_chars.begin(), all_chars.end());
-        return StrVec(unique_chars.begin(), unique_chars.end());
+        std::set<std::string> unique_syms(all_syms.begin(), all_syms.end());
+        StrVec unique_syms_vec(unique_syms.begin(), unique_syms.end());
+        if (include_empty)
+        {
+            unique_syms_vec.push_back(lingdist::EMPTY);
+        }
+        return unique_syms_vec;
     }
 
     DataFrame long2squareform(const DataFrame &data, bool symmetric, double default_diag)
     {
-        StringVector chars1_col = data[0];
-        StringVector chars2_col = data[1];
+        StringVector lab1_col = data[0];
+        StringVector lab2_col = data[1];
         NumericVector dist_col = data[2];
 
+        // get unique labels
+        std::vector<String> all_labs(lab1_col.begin(), lab1_col.end());
+        all_labs.insert(all_labs.end(), lab2_col.begin(), lab2_col.end());
+        std::set<String> unique_labs_set(all_labs.begin(), all_labs.end());
+        std::vector<String> unique_labs(unique_labs_set.begin(), unique_labs_set.end());
+
+        // initialize result DataFrame
+        StringVector names;
+        std::unordered_map<String, int> lab2index;
+        DataFrame result;
+        for (std::size_t i = 0; i < unique_labs.size(); i++)
+        {
+            lab2index[unique_labs[i]] = static_cast<int>(i);
+            names.push_back(unique_labs[i]);
+            result.push_back(NumericVector(unique_labs.size(), NA_REAL));
+        }
+
+        // fill in distances
         String char1, char2;
         double dist;
-        std::vector<String> all_chars(chars1_col.begin(), chars1_col.end());
-        all_chars.insert(all_chars.end(), chars2_col.begin(), chars2_col.end());
-        std::set<String> unique_chars_set(all_chars.begin(), all_chars.end());
-        std::vector<String> unique_chars(unique_chars_set.begin(), unique_chars_set.end());
-        StringVector names;
-        std::unordered_map<String, int> char2idx;
-        DataFrame result;
-        for (std::size_t i = 0; i < unique_chars.size(); i++)
-        {
-            char2idx[unique_chars[i]] = static_cast<int>(i);
-            names.push_back(unique_chars[i]);
-            result.push_back(NumericVector(unique_chars.size(), NA_REAL));
-        }
         int nrow = data.nrow();
         for (int i = 0; i < nrow; i++)
         {
-            char1 = chars1_col[i];
-            char2 = chars2_col[i];
+            char1 = lab1_col[i];
+            char2 = lab2_col[i];
             dist = dist_col[i];
-            NumericVector col1 = result[char2idx[char1]];
-            col1[char2idx[char2]] = dist;
+            NumericVector col1 = result[lab2index[char1]];
+            col1[lab2index[char2]] = dist;
             if (symmetric)
             {
-                NumericVector col2 = result[char2idx[char2]];
-                col2[char2idx[char1]] = dist;
+                NumericVector col2 = result[lab2index[char2]];
+                col2[lab2index[char1]] = dist;
             }
         }
-        for (size_t i = 0; i < unique_chars.size(); i++)
+        for (size_t i = 0; i < unique_labs.size(); i++)
         {
             NumericVector col = result[i];
             if (NumericVector::is_na(col[i]))

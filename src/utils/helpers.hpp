@@ -36,7 +36,7 @@ namespace lingdist
     std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2);
 
     // Extract all unique tokens from a DataFrame
-    StrVec get_all_unique_chars(const Rcpp::DataFrame &data, const Rcpp::String &delim);
+    StrVec get_all_unique_syms(const Rcpp::DataFrame &data, const Rcpp::String &delim, bool include_empty = true);
 
     // --- DataFrame Utils ---
 

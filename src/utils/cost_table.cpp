@@ -8,8 +8,7 @@ namespace lingdist
 {
     lingdist::StrVec CostTable::check_missing_symbols(const DataFrame &data, const String &delim) const
     {
-        lingdist::StrVec unique_chars = lingdist::get_all_unique_chars(data, delim);
-        unique_chars.push_back(lingdist::EMPTY);
+        lingdist::StrVec unique_chars = lingdist::get_all_unique_syms(data, delim, true);
         lingdist::StrVec missing_chars;
         for (const auto &ch : unique_chars)
         {
@@ -144,6 +143,10 @@ namespace lingdist
     {
         if (is_fast)
         {
+            if (syms.empty())
+            {
+                warning("You are trying to convert an empty fast cost table to DataFrame. This may be caused by a bug in C++ code.");
+            }
             return build_default_cost_table(
                        syms, fast_sub_cost, fast_ins_del_cost)
                 .to_dataframe();

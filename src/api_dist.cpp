@@ -100,9 +100,8 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
     }
     else
     {
-        lingdist::StrVec chars = lingdist::get_all_unique_chars(data, delim);
-        chars.push_back(lingdist::EMPTY);
-        cost = lingdist::build_fast_cost_table(chars, default_sub_cost, default_ins_del_cost);
+        lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
+        cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
     return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost);
 }

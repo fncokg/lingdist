@@ -201,8 +201,7 @@ namespace lingdist
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", data.nrow());
 
         // First, prepare a default cost table
-        lingdist::StrVec unique_chars = lingdist::get_all_unique_chars(data, delim);
-        unique_chars.push_back(lingdist::EMPTY); // Ensure EMPTY is included
+        lingdist::StrVec unique_chars = lingdist::get_all_unique_syms(data, delim, true);
 
         if (verbose)
             Rprintf("Identified %d unique characters in the data frame.\n", static_cast<int>(unique_chars.size()));
