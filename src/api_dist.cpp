@@ -25,9 +25,11 @@ namespace
 //'
 //' @param str1 String to be compared.
 //' @param str2 String to be compared.
-//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also [generate_default_cost_matrix()] to generate a default cost matrix.
+//' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 //' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 //' @param return_alignments Whether to return alignment details
+//' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
+//' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 //' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 //' @seealso [generate_default_cost_matrix()]
 //' @examples
@@ -36,13 +38,18 @@ namespace
 //' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 //' alignments <- res$alignments
 //[[Rcpp::export]]
-List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false)
+List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
     {
         DataFrame cost_mat_ = DataFrame(cost_mat);
         cost = lingdist::build_cost_table(cost_mat_);
+    }
+    else
+    {
+        // this is unsafe: when `cost.to_dataframe()` is called, it returns an empty cost table
+        cost = lingdist::build_fast_cost_table(lingdist::StrVec(), default_sub_cost, default_ins_del_cost);
     }
     lingdist::StrVec chars1 = lingdist::split(str1, delim);
     lingdist::StrVec chars2 = lingdist::split(str2, delim);
