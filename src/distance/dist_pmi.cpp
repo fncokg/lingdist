@@ -269,7 +269,6 @@ namespace lingdist
         }
         if (mean_diff >= tol)
         {
-            Function warning("warning");
             warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
         }
 

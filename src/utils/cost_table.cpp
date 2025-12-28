@@ -13,7 +13,7 @@ namespace lingdist
         lingdist::StrVec missing_chars;
         for (const auto &ch : unique_chars)
         {
-            if (colIndex.find(ch) == colIndex.end() || rowIndex.find(ch) == rowIndex.end())
+            if (sym_index.find(ch) == sym_index.end())
             {
                 missing_chars.push_back(ch);
             }
@@ -28,59 +28,72 @@ namespace lingdist
         {
             return table;
         }
-        StringVector _row_names = cost_mat.attr("row.names");
-        StringVector _col_names = cost_mat.names();
-        StrVec row_names = as<StrVec>(_row_names);
-        StrVec col_names = as<StrVec>(_col_names);
-
-        table.nrow = static_cast<int>(row_names.size());
-        table.ncol = static_cast<int>(col_names.size());
-        table.data.resize(static_cast<size_t>(table.nrow) * static_cast<size_t>(table.ncol));
-
-        for (int c = 0; c < table.ncol; ++c)
-            table.colIndex[col_names[c]] = c;
-        for (int r = 0; r < table.nrow; ++r)
-            table.rowIndex[row_names[r]] = r;
-
-        for (int c = 0; c < table.ncol; ++c)
+        if (cost_mat.nrow() != cost_mat.ncol())
         {
-            NumericVector this_col = cost_mat[c];
-            for (int r = 0; r < table.nrow; ++r)
+            stop("Cost matrix must be square.");
+        }
+
+        StrVec row_names = as<StrVec>(cost_mat.attr("row.names"));
+        StrVec col_names = as<StrVec>(cost_mat.names());
+
+        table.is_fast = false;
+        table.nsyms = static_cast<int>(row_names.size());
+        table.syms = row_names;
+        table.data.resize(static_cast<size_t>(table.nsyms) * static_cast<size_t>(table.nsyms));
+
+        std::unordered_map<std::string, int> cindexer, rindexer;
+        for (int i = 0; i < table.nsyms; ++i)
+        {
+            cindexer[col_names[i]] = i;
+            rindexer[row_names[i]] = i;
+        }
+
+        for (auto &sym1 : table.syms)
+        {
+            int c_id = cindexer[sym1];
+            NumericVector this_col = cost_mat[c_id];
+            for (auto &sym2 : table.syms)
             {
-                table.data[table.get_index(c, r)] = this_col[r];
+                int r_id = rindexer[sym2];
+                table.data[table.get_index(c_id, r_id)] = this_col[r_id];
             }
         }
         return table;
     }
 
-    CostTable build_default_cost_table(const lingdist::StrVec &chars, double sub_cost, double ins_del_cost)
+    CostTable build_fast_cost_table(const lingdist::StrVec &syms, double sub_cost, double ins_del_cost)
     {
         CostTable table;
-        int nchars = static_cast<int>(chars.size());
-        table.nrow = nchars;
-        table.ncol = nchars;
-        table.data.resize(static_cast<size_t>(table.nrow) * static_cast<size_t>(table.ncol));
-        for (int i = 0; i < nchars; ++i)
+        table.is_fast = true;
+        table.fast_sub_cost = sub_cost;
+        table.fast_ins_del_cost = ins_del_cost;
+        // copy
+        table.syms = syms;
+        return table;
+    }
+
+    CostTable build_default_cost_table(const lingdist::StrVec &syms, double sub_cost, double ins_del_cost)
+    {
+        CostTable table;
+        int nsyms = static_cast<int>(syms.size());
+        table.is_fast = false;
+        table.syms = syms;
+        table.nsyms = nsyms;
+        table.data.resize(static_cast<size_t>(table.nsyms) * static_cast<size_t>(table.nsyms));
+        for (int i = 0; i < nsyms; ++i)
         {
-            table.rowIndex[chars[i]] = i;
-            table.colIndex[chars[i]] = i;
+            table.sym_index[syms[i]] = i;
         }
-        for (int r = 0; r < table.nrow; ++r)
+        for (auto &sym1 : syms)
         {
-            for (int c = 0; c < table.ncol; ++c)
+            for (auto &sym2 : syms)
             {
-                if (r == c)
+                double value = (sym1 == sym2) ? 0.0 : sub_cost;
+                if (sym1 == lingdist::EMPTY || sym2 == lingdist::EMPTY)
                 {
-                    table.data[table.get_index(c, r)] = 0.0;
+                    value = ins_del_cost;
                 }
-                else if (r == 0 || c == 0)
-                {
-                    table.data[table.get_index(c, r)] = ins_del_cost; // insertion/deletion cost
-                }
-                else
-                {
-                    table.data[table.get_index(c, r)] = sub_cost;
-                }
+                table.set_cost(sym1, sym2, value);
             }
         }
         return table;
@@ -88,51 +101,75 @@ namespace lingdist
 
     double CostTable::get_cost(const std::string &str1, const std::string &str2) const
     {
-        auto cIt = colIndex.find(str1);
-        auto rIt = rowIndex.find(str2);
-        if (cIt != colIndex.end() && rIt != rowIndex.end())
+        if (is_fast)
         {
-            return at_by_index(cIt->second, rIt->second);
+            if (str1 == str2)
+            {
+                return 0.0;
+            }
+            else if (str1 == lingdist::EMPTY || str2 == lingdist::EMPTY)
+            {
+                return fast_ins_del_cost;
+            }
+            else
+            {
+                return fast_sub_cost;
+            }
         }
-        // 未定义时，遵循原逻辑：相同为 0，否则 1
-        return (str1 == str2) ? 0.0 : 1.0;
+        else
+        {
+            auto cfind = sym_index.find(str1);
+            auto rfind = sym_index.find(str2);
+            if (cfind != sym_index.end() && rfind != sym_index.end())
+            {
+                return at_by_index(cfind->second, rfind->second);
+            }
+            // 未定义时，遵循原逻辑：相同为 0，否则 1
+            return (str1 == str2) ? 0.0 : 1.0;
+        }
     }
 
     void CostTable::set_cost(const std::string &str1, const std::string &str2, double new_value)
     {
-        auto cIt = colIndex.find(str1);
-        auto rIt = rowIndex.find(str2);
-        if (cIt != colIndex.end() && rIt != rowIndex.end())
+        auto cfind = sym_index.find(str1);
+        auto rfind = sym_index.find(str2);
+        if (cfind != sym_index.end() && rfind != sym_index.end())
         {
-            data[get_index(cIt->second, rIt->second)] = new_value;
+            data[get_index(cfind->second, rfind->second)] = new_value;
         }
     }
 
     DataFrame CostTable::to_dataframe() const
     {
-        StringVector row_names(nrow);
-        StringVector col_names(ncol);
-        for (const auto &pair : rowIndex)
+        if (is_fast)
         {
-            row_names[pair.second] = pair.first;
+            return build_default_cost_table(
+                       syms, fast_sub_cost, fast_ins_del_cost)
+                .to_dataframe();
         }
-        for (const auto &pair : colIndex)
+        else
         {
-            col_names[pair.second] = pair.first;
-        }
-        DataFrame df = DataFrame::create();
-        for (int c = 0; c < ncol; ++c)
-        {
-            NumericVector this_col(nrow);
-            for (int r = 0; r < nrow; ++r)
+            StringVector row_names(nsyms);
+            StringVector col_names(nsyms);
+            for (const auto &[key, value] : sym_index)
             {
-                this_col[r] = at_by_index(c, r);
+                row_names[value] = key;
+                col_names[value] = key;
             }
-            df.push_back(this_col);
+            DataFrame df = DataFrame::create();
+            for (int c = 0; c < nsyms; ++c)
+            {
+                NumericVector this_col(nsyms);
+                for (int r = 0; r < nsyms; ++r)
+                {
+                    this_col[r] = at_by_index(c, r);
+                }
+                df.push_back(this_col);
+            }
+            df.attr("names") = col_names;
+            df.attr("row.names") = row_names;
+            return df;
         }
-        df.attr("names") = col_names;
-        df.attr("row.names") = row_names;
-        return df;
     }
 
 } // namespace lingdist
