@@ -55,7 +55,7 @@ namespace lingdist
             for (auto &sym2 : table.syms)
             {
                 int r_id = rindexer[sym2];
-                table.data[table.get_index(c_id, r_id)] = this_col[r_id];
+                table.set_cost(sym1, sym2, this_col[r_id]);
             }
         }
         return table;

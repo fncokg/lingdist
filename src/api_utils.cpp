@@ -20,6 +20,7 @@ using namespace Rcpp;
 DataFrame generate_default_cost_matrix(const DataFrame &data, const String &delim = "")
 {
     lingdist::StrVec chars = lingdist::get_all_unique_chars(data, delim);
+    chars.push_back(lingdist::EMPTY);
     return lingdist::build_default_cost_table(chars).to_dataframe();
 }
 
