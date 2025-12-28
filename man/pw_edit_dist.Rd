@@ -12,13 +12,15 @@ pw_edit_dist(
   symmetric = TRUE,
   parallel = FALSE,
   n_threads = 2L,
-  check_missing_cost = TRUE
+  check_missing_cost = TRUE,
+  default_sub_cost = 1,
+  default_ins_del_cost = 1
 )
 }
 \arguments{
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
-\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, a default cost matrix is built with substitution cost 1.0 and insertion/deletion cost 1.0. See also `generate_default_cost_matrix()` to generate a default cost matrix.}
+\item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.}
 
 \item{delim}{The delimiter separating atomic symbols.}
 
@@ -31,6 +33,10 @@ pw_edit_dist(
 \item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
 
 \item{check_missing_cost}{Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.}
+
+\item{default_sub_cost}{Default substitution cost when `cost_mat` is NULL.}
+
+\item{default_ins_del_cost}{Default insertion and deletion cost when `cost_mat` is NULL.}
 }
 \value{
 A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
@@ -41,6 +47,8 @@ Compute average edit distance between all row pairs of a dataframe, empty or NA 
 \examples{
 df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 cost.mat <- data.frame()
+result <- pw_edit_dist(df, delim="_")
+result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)

@@ -7,9 +7,11 @@
 #'
 #' @param str1 String to be compared.
 #' @param str2 String to be compared.
-#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. See also [generate_default_cost_matrix()] to generate a default cost matrix.
+#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 #' @param return_alignments Whether to return alignment details
+#' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
+#' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 #' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 #' @seealso [generate_default_cost_matrix()]
 #' @examples
@@ -17,8 +19,8 @@
 #' dist <- string_edit_dist("leaf","leaves")$distance
 #' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 #' alignments <- res$alignments
-string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE) {
-    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments)
+string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE, default_sub_cost = 1.0, default_ins_del_cost = 1.0) {
+    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost)
 }
 
 #' Compute edit distance between all row pairs of a dataframe
@@ -26,22 +28,26 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, a default cost matrix is built with substitution cost 1.0 and insertion/deletion cost 1.0. See also `generate_default_cost_matrix()` to generate a default cost matrix.
+#' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 #' @param delim The delimiter separating atomic symbols.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 #' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
+#' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
+#' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' cost.mat <- data.frame()
+#' result <- pw_edit_dist(df, delim="_")
+#' result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe
