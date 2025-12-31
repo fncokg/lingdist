@@ -68,7 +68,7 @@ namespace
 namespace lingdist
 {
     DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
-                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool squareform, bool parallel, int n_threads)
+                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool squareform, bool parallel, int n_threads, bool quiet)
     {
 
         auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim);
@@ -77,12 +77,15 @@ namespace lingdist
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
         std::vector<double> dists(row_pairs.size());
-        RcppThread::ProgressBar bar(row_pairs.size(), 1);
+        RcppThread::ProgressBar *bar = nullptr;
+        if (!quiet)
+            bar = new RcppThread::ProgressBar(row_pairs.size(), 1);
         std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
             auto [rowi, rowj] = row_pairs[idx];
             dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
-            bar++;
+            if (bar)
+                (*bar)++;
         };
         if (parallel)
         {

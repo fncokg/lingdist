@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // string_edit_dist
-List string_edit_dist(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, bool return_alignments, double default_sub_cost, double default_ins_del_cost);
-RcppExport SEXP _lingdist_string_edit_dist(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP return_alignmentsSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP) {
+List string_edit_dist(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, bool return_alignments, double default_sub_cost, double default_ins_del_cost, bool quiet);
+RcppExport SEXP _lingdist_string_edit_dist(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP return_alignmentsSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -24,13 +24,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type return_alignments(return_alignmentsSEXP);
     Rcpp::traits::input_parameter< double >::type default_sub_cost(default_sub_costSEXP);
     Rcpp::traits::input_parameter< double >::type default_ins_del_cost(default_ins_del_costSEXP);
-    rcpp_result_gen = Rcpp::wrap(string_edit_dist(str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(string_edit_dist(str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // pw_edit_dist
-DataFrame pw_edit_dist(const DataFrame& data, Nullable<DataFrame> cost_mat, const String& delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, double default_sub_cost, double default_ins_del_cost);
-RcppExport SEXP _lingdist_pw_edit_dist(SEXP dataSEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP symmetricSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP check_missing_costSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP) {
+DataFrame pw_edit_dist(const DataFrame& data, Nullable<DataFrame> cost_mat, const String& delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, double default_sub_cost, double default_ins_del_cost, bool quiet);
+RcppExport SEXP _lingdist_pw_edit_dist(SEXP dataSEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP symmetricSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP check_missing_costSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -44,13 +45,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type check_missing_cost(check_missing_costSEXP);
     Rcpp::traits::input_parameter< double >::type default_sub_cost(default_sub_costSEXP);
     Rcpp::traits::input_parameter< double >::type default_ins_del_cost(default_ins_del_costSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_edit_dist(data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // pw_pmi_dist
-List pw_pmi_dist(const DataFrame& data, const String& delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool verbose);
-RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP alignment_max_pathsSEXP, SEXP verboseSEXP) {
+List pw_pmi_dist(const DataFrame& data, const String& delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet);
+RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP alignment_max_pathsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -62,14 +64,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_epochs(max_epochsSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type alignment_max_paths(alignment_max_pathsSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // pw_wjd
-DataFrame pw_wjd(const DataFrame& data, Nullable<NumericVector> cate_level_weights, Nullable<NumericVector> multi_form_weights, const String& form_delim, const String& cate_delim, bool squareform, bool parallel, int n_threads);
-RcppExport SEXP _lingdist_pw_wjd(SEXP dataSEXP, SEXP cate_level_weightsSEXP, SEXP multi_form_weightsSEXP, SEXP form_delimSEXP, SEXP cate_delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP) {
+DataFrame pw_wjd(const DataFrame& data, Nullable<NumericVector> cate_level_weights, Nullable<NumericVector> multi_form_weights, const String& form_delim, const String& cate_delim, bool squareform, bool parallel, int n_threads, bool quiet);
+RcppExport SEXP _lingdist_pw_wjd(SEXP dataSEXP, SEXP cate_level_weightsSEXP, SEXP multi_form_weightsSEXP, SEXP form_delimSEXP, SEXP cate_delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -81,7 +83,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type squareform(squareformSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_wjd(data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(pw_wjd(data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -125,10 +128,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 7},
-    {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 10},
+    {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 8},
+    {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 11},
     {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 9},
-    {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 8},
+    {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 9},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 3},
     {"_lingdist_check_cost_mat_symbols", (DL_FUNC) &_lingdist_check_cost_mat_symbols, 3},

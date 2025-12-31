@@ -45,7 +45,7 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost)
+    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
     {
         if (check_missing_cost && !cost.is_fast)
         {
@@ -57,7 +57,7 @@ namespace lingdist
                 {
                     missing_symbols_str += s + ", ";
                 }
-                Rprintf("Warning: The cost table is missing the following symbols found in the data: %s. Cost values for these symbols will be treated as 1.0 (deletion/insertion/substitution) or 0.0 (matching) by default.\n",
+                warning("Warning: The cost table is missing the following symbols found in the data: %s. Cost values for these symbols will be treated as 1.0 (deletion/insertion/substitution) or 0.0 (matching) by default.\n",
                         missing_symbols_str.c_str());
             }
         }
@@ -67,12 +67,15 @@ namespace lingdist
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
         std::vector<double> dists(row_pairs.size());
-        RcppThread::ProgressBar bar(row_pairs.size(), 1);
+        RcppThread::ProgressBar *bar = nullptr;
+        if (!quiet)
+            bar = new RcppThread::ProgressBar(row_pairs.size(), 1);
         std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
             auto [rowi, rowj] = row_pairs[idx];
             dists[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost);
-            bar++;
+            if (bar)
+                (*bar)++;
         };
         if (parallel)
         {

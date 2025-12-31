@@ -12,6 +12,7 @@
 #' @param return_alignments Whether to return alignment details
 #' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 #' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
+#' @param quiet Whether to suppress all output messages.
 #' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 #' @seealso [generate_default_cost_matrix()]
 #' @examples
@@ -19,8 +20,8 @@
 #' dist <- string_edit_dist("leaf","leaves")$distance
 #' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 #' alignments <- res$alignments
-string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE, default_sub_cost = 1.0, default_ins_del_cost = 1.0) {
-    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost)
+string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
+    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost, quiet)
 }
 
 #' Compute edit distance between all row pairs of a dataframe
@@ -37,6 +38,7 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
 #' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 #' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
+#' @param quiet Whether to suppress all output messages.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
@@ -46,8 +48,8 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe
@@ -62,7 +64,7 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' @param max_epochs Maximum number of epochs for EM algorithm.
 #' @param tol Tolerance for convergence.
 #' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each EM epoch.
-#' @param verbose Whether to print more detailed computation messages, useful for tracking long computations and debugging.
+#' @param quiet Whether to suppress all output messages.
 #' @return A list containing the following components:
 #' \item{result}{A dataframe of distances, either in long table form or square form.}
 #' \item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
@@ -73,8 +75,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
-pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, verbose = TRUE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose)
+pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -90,12 +92,13 @@ pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, 
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+#' @param quiet Whether to suppress all output messages.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 #' result <- pw_wjd(df, form_delim="#", cate_delim="_")
-pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", squareform = FALSE, parallel = FALSE, n_threads = 2L) {
-    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads)
+pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", squareform = FALSE, parallel = FALSE, n_threads = 2L, quiet = FALSE) {
+    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads, quiet)
 }
 
 #' Generate a default cost matrix

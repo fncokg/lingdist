@@ -195,8 +195,9 @@ namespace
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool verbose)
+    List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
+        bool verbose = !quiet;
         if (verbose)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", data.nrow());
 
@@ -231,12 +232,15 @@ namespace lingdist
             if (verbose)
                 Rprintf("Epoch %d/%d\n", iepoch, max_epochs);
 
-            RcppThread::ProgressBar bar(n_row_pairs, 1);
+            RcppThread::ProgressBar *bar = nullptr;
+            if (verbose)
+                bar = new RcppThread::ProgressBar(n_row_pairs, 1);
             std::function<void(int)> loop_body = [&](int idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
                 results[idx] = pmi_row(rows_vector[rowi], rows_vector[rowj], cost, alignment_max_paths);
-                bar++;
+                if (bar)
+                    (*bar)++;
             };
             if (parallel)
             {

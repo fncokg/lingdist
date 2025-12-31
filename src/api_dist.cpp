@@ -30,6 +30,7 @@ namespace
 //' @param return_alignments Whether to return alignment details
 //' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 //' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
+//' @param quiet Whether to suppress all output messages.
 //' @return A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 //' @seealso [generate_default_cost_matrix()]
 //' @examples
@@ -38,7 +39,7 @@ namespace
 //' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 //' alignments <- res$alignments
 //[[Rcpp::export]]
-List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0)
+List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -80,6 +81,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
 //' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 //' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
+//' @param quiet Whether to suppress all output messages.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
@@ -90,7 +92,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -103,7 +105,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost);
+    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
@@ -118,7 +120,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' @param max_epochs Maximum number of epochs for EM algorithm.
 //' @param tol Tolerance for convergence.
 //' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each EM epoch.
-//' @param verbose Whether to print more detailed computation messages, useful for tracking long computations and debugging.
+//' @param quiet Whether to suppress all output messages.
 //' @return A list containing the following components:
 //' \item{result}{A dataframe of distances, either in long table form or square form.}
 //' \item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
@@ -130,9 +132,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool verbose = true)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, verbose);
+    return lingdist::pmi_df(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
 }
 
 //' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -148,15 +150,16 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squarefor
 //' @param squareform Whether to return a dataframe in squareform.
 //' @param parallel Whether to parallelize the computation.
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+//' @param quiet Whether to suppress all output messages.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 //' result <- pw_wjd(df, form_delim="#", cate_delim="_")
 //[[Rcpp::export]]
-DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2)
+DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false)
 {
     std::vector<double> cate_weights, form_weights;
     cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);
     form_weights = multi_form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(multi_form_weights)) : make_default_weights(10);
-    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, squareform, parallel, n_threads);
+    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, squareform, parallel, n_threads, quiet);
 }
