@@ -1,3 +1,7 @@
+# lingdist 2.2.1 2026-01-04
+
+Add `quite` parameters to all distance functions to control printing messages and progress bars.
+
 # lingdist 2.2.0 2025-12-26
 
 Several improvements have been made:
