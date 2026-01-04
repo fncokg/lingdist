@@ -61,9 +61,9 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, 
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
-#' @param max_epochs Maximum number of epochs for EM algorithm.
+#' @param max_epochs Maximum number of epochs.
 #' @param tol Tolerance for convergence.
-#' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each EM epoch.
+#' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
 #' @param quiet Whether to suppress all output messages.
 #' @return A list containing the following components:
 #' \item{result}{A dataframe of distances, either in long table form or square form.}

@@ -12,7 +12,8 @@ pw_wjd(
   cate_delim = "_",
   squareform = FALSE,
   parallel = FALSE,
-  n_threads = 2L
+  n_threads = 2L,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ pw_wjd(
 \item{parallel}{Whether to parallelize the computation.}
 
 \item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
+
+\item{quiet}{Whether to suppress all output messages.}
 }
 \value{
 A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.

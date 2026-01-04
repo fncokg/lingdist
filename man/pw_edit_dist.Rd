@@ -14,7 +14,8 @@ pw_edit_dist(
   n_threads = 2L,
   check_missing_cost = TRUE,
   default_sub_cost = 1,
-  default_ins_del_cost = 1
+  default_ins_del_cost = 1,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ pw_edit_dist(
 \item{default_sub_cost}{Default substitution cost when `cost_mat` is NULL.}
 
 \item{default_ins_del_cost}{Default insertion and deletion cost when `cost_mat` is NULL.}
+
+\item{quiet}{Whether to suppress all output messages.}
 }
 \value{
 A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.

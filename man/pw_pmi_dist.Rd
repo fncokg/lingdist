@@ -13,7 +13,7 @@ pw_pmi_dist(
   max_epochs = 20L,
   tol = 1e-04,
   alignment_max_paths = 3L,
-  verbose = TRUE
+  quiet = FALSE
 )
 }
 \arguments{
@@ -27,13 +27,13 @@ pw_pmi_dist(
 
 \item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
 
-\item{max_epochs}{Maximum number of epochs for EM algorithm.}
+\item{max_epochs}{Maximum number of epochs.}
 
 \item{tol}{Tolerance for convergence.}
 
-\item{alignment_max_paths}{Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each EM epoch.}
+\item{alignment_max_paths}{Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.}
 
-\item{verbose}{Whether to print more detailed computation messages, useful for tracking long computations and debugging.}
+\item{quiet}{Whether to suppress all output messages.}
 }
 \value{
 A list containing the following components:

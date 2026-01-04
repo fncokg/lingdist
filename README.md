@@ -10,7 +10,7 @@ In general:
 
 Supported Algorithms:
 - **Generalized Edit Distance**: Supports custom cost assignments, treating strings as single symbols (e.g., IPA transcriptions), and returning detailed alignment results.
-- **PMI Distance**: Computes distances based on Pointwise Mutual Information, automatically learning costs from the data using an EM algorithm.
+- **PMI Distance**: Computes distances based on Pointwise Mutual Information, automatically learning costs from the data.
 - **Weighted Jaccard Distance**: Computes distances for categorical data with hierarchical structure and multiple forms (e.g., "A_2_a#A_3").
 
 # Installation

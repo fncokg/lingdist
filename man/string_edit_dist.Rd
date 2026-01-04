@@ -11,7 +11,8 @@ string_edit_dist(
   delim = "",
   return_alignments = FALSE,
   default_sub_cost = 1,
-  default_ins_del_cost = 1
+  default_ins_del_cost = 1,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ string_edit_dist(
 \item{default_sub_cost}{Default substitution cost when `cost_mat` is NULL.}
 
 \item{default_ins_del_cost}{Default insertion and deletion cost when `cost_mat` is NULL.}
+
+\item{quiet}{Whether to suppress all output messages.}
 }
 \value{
 A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
