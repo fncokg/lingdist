@@ -78,10 +78,10 @@ namespace lingdist
         StringVector lab1Col, lab2Col;
 
         std::vector<std::pair<int, int>> row_pairs;
-        int inner_loop_start;
-        for (int rowi = 0; rowi < nrows - 1; rowi++)
+        int outer_loop_end = symmetric ? nrows - 1 : nrows;
+        for (int rowi = 0; rowi < outer_loop_end; rowi++)
         {
-            inner_loop_start = symmetric ? rowi + 1 : 0;
+            int inner_loop_start = symmetric ? rowi + 1 : 0;
             for (int rowj = inner_loop_start; rowj < nrows; rowj++)
             {
                 String label1 = rownames[rowi];
