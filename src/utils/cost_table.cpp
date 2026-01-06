@@ -50,7 +50,12 @@ namespace lingdist
 
         for (auto &sym1 : table.syms)
         {
-            int c_id = cindexer[sym1];
+            auto _cid = cindexer.find(sym1);
+            if (_cid == cindexer.end())
+            {
+                stop("Symbol '" + sym1 + "' found in row names but not in column names of cost matrix.");
+            }
+            int c_id = _cid->second;
             NumericVector this_col = cost_mat[c_id];
             for (auto &sym2 : table.syms)
             {
@@ -124,7 +129,7 @@ namespace lingdist
             {
                 return at_by_index(cfind->second, rfind->second);
             }
-            // 未定义时，遵循原逻辑：相同为 0，否则 1
+            // symbol not found in non-fast table, return default costs
             return (str1 == str2) ? 0.0 : 1.0;
         }
     }
