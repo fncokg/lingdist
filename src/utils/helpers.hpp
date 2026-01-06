@@ -16,7 +16,7 @@ namespace lingdist
     // Public constants
     extern const std::string EMPTY;
     extern const double LOG2;
-    extern const double EPS = 1e-9;
+    extern const double EPS;
 
     // Check double equality within EPS
     inline bool double_equal(double a, double b)

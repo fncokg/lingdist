@@ -10,6 +10,7 @@ namespace lingdist
 {
     const std::string EMPTY = "_NULL_";
     const double LOG2 = std::log(2.0);
+    const double EPS = 1e-9;
 
     void singleFor(int begin,
                    int end,
