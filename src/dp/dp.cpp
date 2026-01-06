@@ -1,6 +1,15 @@
 #include "dp.hpp"
 #include <algorithm>
 
+namespace
+{
+    constexpr double EPS = 1e-9;
+    bool double_equal(double a, double b)
+    {
+        return std::abs(a - b) < EPS;
+    }
+}
+
 namespace lingdist
 {
     // Basic DP distance, return only distance value
@@ -29,12 +38,15 @@ namespace lingdist
         // Fill DP table
         for (std::size_t i = 1; i < nrow; i++)
         {
+            double cost_del = cost.get_cost(EMPTY, vec2[i - 1]);
             for (std::size_t j = 1; j < ncol; j++)
             {
+                double cost_ins = cost.get_cost(vec1[j - 1], EMPTY);
+                double cost_sub = cost.get_cost(vec1[j - 1], vec2[i - 1]);
                 at(i, j) = std::min({
-                    at(i - 1, j - 1) + cost.get_cost(vec1[j - 1], vec2[i - 1]),
-                    at(i, j - 1) + cost.get_cost(vec1[j - 1], EMPTY),
-                    at(i - 1, j) + cost.get_cost(EMPTY, vec2[i - 1]),
+                    at(i - 1, j - 1) + cost_sub,
+                    at(i, j - 1) + cost_ins,
+                    at(i - 1, j) + cost_del,
                 });
             }
         }
@@ -65,20 +77,23 @@ namespace lingdist
 
         for (std::size_t i = 1; i < nrow; i++)
         {
+            double cost_del = cost.get_cost(EMPTY, vec2[i - 1]);
             for (std::size_t j = 1; j < ncol; j++)
             {
+                double cost_ins = cost.get_cost(vec1[j - 1], EMPTY);
+                double cost_sub = cost.get_cost(vec1[j - 1], vec2[i - 1]);
                 std::vector<double> possible_values({
-                    dist[i - 1][j - 1].first + cost.get_cost(vec1[j - 1], vec2[i - 1]),
-                    dist[i][j - 1].first + cost.get_cost(vec1[j - 1], EMPTY),
-                    dist[i - 1][j].first + cost.get_cost(EMPTY, vec2[i - 1]),
+                    dist[i - 1][j - 1].first + cost_sub,
+                    dist[i][j - 1].first + cost_ins,
+                    dist[i - 1][j].first + cost_del,
                 });
                 double min_value = *std::min_element(possible_values.begin(), possible_values.end());
                 Points source_points;
-                if (possible_values[0] == min_value)
+                if (double_equal(possible_values[0], min_value))
                     source_points.emplace_back(static_cast<int>(i - 1), static_cast<int>(j - 1));
-                if (possible_values[1] == min_value)
+                if (double_equal(possible_values[1], min_value))
                     source_points.emplace_back(static_cast<int>(i), static_cast<int>(j - 1));
-                if (possible_values[2] == min_value)
+                if (double_equal(possible_values[2], min_value))
                     source_points.emplace_back(static_cast<int>(i - 1), static_cast<int>(j));
                 dist[i][j] = std::make_pair(min_value, source_points);
             }
