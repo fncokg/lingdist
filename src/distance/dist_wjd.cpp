@@ -16,6 +16,11 @@ namespace
         if (len1 == 0 || len2 == 0)
             return 0.0;
         size_t min_len = std::min(len1, len2);
+        if (min_len > cate_level_weights.size())
+        {
+            Rcpp::stop("Number of categories exceeds length of cate_level_weights.");
+            return NA_REAL;
+        }
         for (size_t i = 0; i < min_len; i++)
         {
             if (form1[i] != form2[i])
@@ -47,6 +52,11 @@ namespace
             {
                 double this_dist = 0.0, sum_weights = 0.0;
                 size_t max_len = std::max(nforms1, nforms2);
+                if (max_len > multi_form_weights.size())
+                {
+                    Rcpp::stop("Number of forms exceeds length of multi_form_weights.");
+                    return NA_REAL;
+                }
                 for (size_t i = 0; i < max_len; i++)
                 {
                     const auto &form1 = i < nforms1 ? cells1[i] : cells1.back();
@@ -58,6 +68,11 @@ namespace
                 if (sum_weights > 0.0)
                 {
                     this_dist /= sum_weights;
+                }
+                else
+                {
+                    Rcpp::stop("Sum of multi_form_weights should be greater than 0.");
+                    return NA_REAL;
                 }
                 sum_dist += this_dist;
                 nitems += 1.0;
