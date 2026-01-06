@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Rcpp.h>
+#include <RcppThread.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -15,6 +16,12 @@ namespace lingdist
     // Public constants
     extern const std::string EMPTY;
     extern const double LOG2;
+
+    // Safe progressbar
+    struct SafeProgressBar final : public RcppThread::ProgressBar
+    {
+        using RcppThread::ProgressBar::ProgressBar;
+    };
 
     // Single-threaded for loop utility
     void singleFor(int begin, int end, std::function<void(int)> f);

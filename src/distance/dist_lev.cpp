@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <memory>
 
 #include "helpers.hpp"
 #include "cost_table.hpp"
@@ -45,7 +46,7 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
+    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
     {
         if (check_missing_cost && !cost.is_fast)
         {
@@ -67,9 +68,9 @@ namespace lingdist
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
         std::vector<double> dists(row_pairs.size());
-        RcppThread::ProgressBar *bar = nullptr;
+        std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
-            bar = new RcppThread::ProgressBar(row_pairs.size(), 1);
+            bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
         std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
             auto [rowi, rowj] = row_pairs[idx];

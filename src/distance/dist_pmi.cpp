@@ -197,17 +197,16 @@ namespace lingdist
 {
     List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
-        bool verbose = !quiet;
-        if (verbose)
+        if (!quiet)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", data.nrow());
 
         // First, prepare a default cost table
         lingdist::StrVec unique_chars = lingdist::get_all_unique_syms(data, delim, true);
 
-        if (verbose)
+        if (!quiet)
             Rprintf("Identified %d unique characters in the data frame.\n", static_cast<int>(unique_chars.size()));
         lingdist::CostTable prev_cost, cost = lingdist::build_default_cost_table(unique_chars);
-        if (verbose)
+        if (!quiet)
             Rprintf("Initialized default cost table.\n");
 
         List report;
@@ -216,7 +215,7 @@ namespace lingdist
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, true);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
-        if (verbose)
+        if (!quiet)
         {
             Rprintf("Starting PMI iterations with %d row pairs...\n", n_row_pairs);
             if (parallel)
@@ -229,12 +228,13 @@ namespace lingdist
         int iepoch;
         for (iepoch = 1; iepoch <= max_epochs; iepoch++)
         {
-            if (verbose)
+            if (!quiet)
                 Rprintf("Epoch %d/%d\n", iepoch, max_epochs);
 
-            RcppThread::ProgressBar *bar = nullptr;
-            if (verbose)
-                bar = new RcppThread::ProgressBar(n_row_pairs, 1);
+            // RcppThread::ProgressBar *bar = nullptr;
+            std::unique_ptr<lingdist::SafeProgressBar> bar;
+            if (!quiet)
+                bar = std::make_unique<lingdist::SafeProgressBar>(n_row_pairs, 1);
             std::function<void(int)> loop_body = [&](int idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
@@ -251,7 +251,7 @@ namespace lingdist
                 lingdist::singleFor(0, n_row_pairs, loop_body);
             }
 
-            if (verbose)
+            if (!quiet)
                 Rprintf("Updating cost table...\n");
             prev_cost = cost;
             update_cost_table(results, cost, char_map);
@@ -262,11 +262,11 @@ namespace lingdist
                 sum_diff += std::fabs(cost.data[idx] - prev_cost.data[idx]);
             }
             mean_diff = sum_diff / (static_cast<double>(cost.data.size()) - static_cast<double>(unique_chars.size())); // exclude diagonal entries
-            if (verbose)
+            if (!quiet)
                 Rprintf("Cost table updated, mean absolute difference: %.6f, total absolute difference: %.6f\n", mean_diff, sum_diff);
             if (mean_diff < tol)
             {
-                if (verbose)
+                if (!quiet)
                     Rprintf("Convergence reached with mean difference %.6f < tol %.6f. Stopping iterations.\n", mean_diff, tol);
                 break;
             }
@@ -293,7 +293,7 @@ namespace lingdist
         report["mean_diff"] = mean_diff;
         report["converged"] = mean_diff < tol;
         report["n_epochs"] = iepoch;
-        if (verbose)
+        if (!quiet)
             Rprintf("PMI distance computation completed.\n");
         return report;
     }
