@@ -16,6 +16,13 @@ namespace lingdist
     // Public constants
     extern const std::string EMPTY;
     extern const double LOG2;
+    extern const double EPS = 1e-9;
+
+    // Check double equality within EPS
+    inline bool double_equal(double a, double b)
+    {
+        return std::abs(a - b) < EPS;
+    }
 
     // Safe progressbar
     // To suppress warnings about inheriting from class with virtual functions

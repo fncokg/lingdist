@@ -1,14 +1,7 @@
 #include "dp.hpp"
 #include <algorithm>
 
-namespace
-{
-    constexpr double EPS = 1e-9;
-    bool double_equal(double a, double b)
-    {
-        return std::abs(a - b) < EPS;
-    }
-}
+#include "helpers.hpp"
 
 namespace lingdist
 {

@@ -29,58 +29,83 @@ namespace
         std::vector<double> dist;
     };
 
-    // We need a structure to hold character pair counts
-    // The key is that: two chars are unordered, i.e. (c1,c2) == (c2,c1).
+    // Two chars are unordered, i.e. (c1,c2) == (c2,c1).
     // This is because in the alignment, replacement of c1 with c2 is equivalent to replacement of c2 with c1, since we randomly choose one as source and the other as target.
-    struct CharMap
+    struct AlignmentCount
     {
-        std::unordered_map<std::string, uint32_t> idx;
-        std::unordered_map<uint32_t, std::string> rev_idx;
+        // We DO allow diagonal storage here but currently,
+        // but, we DONOT consider identical character pairs in PMI calculation
+        lingdist::StrVec syms;
+        size_t nsyms;
+        std::vector<double> pair_counts;
+        std::vector<double> sym_counts;
 
-        std::unordered_map<uint64_t, double> pair_count;
-
-        CharMap(const std::vector<std::string> &chars)
+        AlignmentCount(const lingdist::StrVec &syms) : syms(syms)
         {
-            uint32_t index = 0;
-            for (const auto &c : chars)
+            nsyms = syms.size();
+            size_t size_lower_tri = (nsyms * (nsyms + 1)) / 2;
+            // NOTE: initialize with 1.0 to avoid any zero counts
+            pair_counts.resize(size_lower_tri, 1.0);
+            sym_counts.resize(nsyms, 1.0);
+        }
+
+        void clear()
+        {
+            std::fill(pair_counts.begin(), pair_counts.end(), 1.0);
+            std::fill(sym_counts.begin(), sym_counts.end(), 1.0);
+        }
+
+        inline size_t rc2idx(size_t r, size_t c) const
+        {
+            if (r > c)
+                std::swap(r, c);
+            // return index in lower-triangular matrix
+            // There're r full rows before the r-th row, and the r-th row has (r + 1) elements. Therefore, we have r(r+1)/2 elements before this row:
+
+            // $\sum_{i=0}^{r-1} (i + 1) = \frac{r(r+1)}{2}$
+
+            return (r * (r + 1)) / 2 + c;
+        }
+
+        // inline std::pair<double, double> idx2rc(size_t idx) const
+        // {
+        //     // First, solve the max r where r(r+1)/2 <= idx
+        //     // That is, r^2 + r - 2*idx <= 0
+        //     // => r = floor(( -1 + sqrt(1 + 8*idx) ) / 2)
+        //     // Then, c = idx - r(r+1)/2
+
+        //     // since idx is postive, we can directly use type cast to size_t instead of std::floor
+        //     size_t r = static_cast<size_t>((std::sqrt(8.0 * static_cast<double>(idx) + 1.0) - 1.0) / 2.0);
+        //     size_t c = idx - (r * (r + 1)) / 2;
+        //     return {r, c};
+        // }
+
+        inline void add_pair(const std::string &c1, const std::string &c2, double step)
+        {
+            auto it1 = std::find(syms.begin(), syms.end(), c1);
+            auto it2 = std::find(syms.begin(), syms.end(), c2);
+            if (it1 != syms.end() && it2 != syms.end())
             {
-                idx[c] = index;
-                rev_idx[index] = c;
-                index++;
+                size_t idx1 = static_cast<size_t>(std::distance(syms.begin(), it1));
+                size_t idx2 = static_cast<size_t>(std::distance(syms.begin(), it2));
+                pair_counts[rc2idx(idx1, idx2)] += step;
             }
         }
 
-        inline bool has(std::string c1, std::string c2) const
+        inline void add_sym(const std::string &c, double step)
         {
-            return pair_count.find(s2k(c1, c2)) != pair_count.end();
-        }
-
-        inline std::pair<std::string, std::string> k2s(uint64_t key) const
-        {
-            uint32_t i1 = static_cast<uint32_t>(key >> 32);
-            uint32_t i2 = static_cast<uint32_t>(key & 0xFFFFFFFF);
-            return {rev_idx.at(i1), rev_idx.at(i2)};
-        }
-
-        inline uint64_t s2k(std::string c1, std::string c2) const
-        {
-            // Unsafe if c1 or c2 not in idx
-            uint32_t i1 = idx.at(c1);
-            uint32_t i2 = idx.at(c2);
-            // let smaller index be in higher bits to ensure uniqueness
-            return i1 <= i2 ? (static_cast<uint64_t>(i1) << 32) | i2 : (static_cast<uint64_t>(i2) << 32) | i1;
-        }
-
-        inline void increment_item(std::string c1, std::string c2, double step)
-        {
-            insert_or_increment(pair_count, s2k(c1, c2), step);
+            auto it = std::find(syms.begin(), syms.end(), c);
+            if (it != syms.end())
+            {
+                size_t idx = static_cast<size_t>(std::distance(syms.begin(), it));
+                sym_counts[idx] += step;
+            }
         }
     };
 
-    void update_cost_table(const std::vector<lingdist::AlignmentResult> &results, lingdist::CostTable &cost, CharMap &char_map)
+    void update_cost_table(const std::vector<lingdist::AlignmentResult> &results, lingdist::CostTable &cost, AlignmentCount &alignment_count)
     {
-        std::unordered_map<std::string, double> row_counts;
-        char_map.pair_count.clear();
+        alignment_count.clear();
         // we do not clear cost, since all its entries will be updated anyway
         // double total_count = 0.0;
         double eff_val;
@@ -98,73 +123,86 @@ namespace
 
                     const std::string &c1 = char_pair.first;
                     const std::string &c2 = char_pair.second;
+                    // We now only consider non-identical character pairs
                     if (c1 != c2)
                     {
-                        char_map.increment_item(c1, c2, eff_val);
-                        insert_or_increment(row_counts, c1, eff_val);
-                        insert_or_increment(row_counts, c2, eff_val);
+                        alignment_count.add_pair(c1, c2, eff_val);
+                        alignment_count.add_sym(c1, eff_val);
+                        alignment_count.add_sym(c2, eff_val);
                         // total_count += eff_val;
                     }
                 }
             }
         }
-        double max_raw_dist = -std::numeric_limits<double>::infinity(), min_raw_dist = std::numeric_limits<double>::infinity();
-        std::vector<std::tuple<std::string, std::string, double>> update_queue;
-        for (uint32_t char1_id = 0; char1_id < char_map.rev_idx.size(); ++char1_id)
+
+        // Now we loop through all the lower-triangular entries twice:
+        // 1st time to get raw distances and find min/max
+        // 2nd time to normalize and update cost table
+        // note that in both loops, we skip diagonal entries (identical character pairs)
+
+        double max_raw_dist = -std::numeric_limits<double>::infinity();
+        double min_raw_dist = std::numeric_limits<double>::infinity();
+
+        for (size_t r = 0; r < alignment_count.nsyms; r++)
         {
-            const std::string &c1 = char_map.rev_idx.at(char1_id);
-            for (uint32_t char2_id = char1_id; char2_id < char_map.rev_idx.size(); ++char2_id)
+            // skip identical pairs
+            for (size_t c = 0; c < r; c++)
             {
-                const std::string &c2 = char_map.rev_idx.at(char2_id);
-                if (char_map.has(c1, c2))
-                {
-                    uint64_t key = char_map.s2k(c1, c2);
-                    double c_xy = char_map.pair_count.at(key);
-                    double c_x = row_counts.at(c1);
-                    double c_y = row_counts.at(c2);
+                size_t idx = alignment_count.rc2idx(r, c);
+                double c_xy = alignment_count.pair_counts[idx];
+                double c_x = alignment_count.sym_counts[r];
+                double c_y = alignment_count.sym_counts[c];
 
-                    // $N$: total number of all character pairs aligned
-                    // $c(x,y)$: count of co-occurrence of x and y
-                    // $c(x),c(y)$: count of occurrence of x and y respectively
+                // $N$: total number of all character pairs aligned
+                // $c(x,y)$: count of co-occurrence of x and y
+                // $c(x),c(y)$: count of occurrence of x and y respectively
 
-                    // $\mathrm{PMI} = \log_2 \frac{p(x,y)}{p(x)p(y)}=\log_2 \frac{c(x,y)N}{c(x)c(y)}$
+                // $\mathrm{PMI} = \log_2 \frac{p(x,y)}{p(x)p(y)}=\log_2 \frac{c(x,y)N}{c(x)c(y)}$
 
-                    // Thus $\mathrm{PMI} = \frac1{\ln2}[\ln \frac{c(x,y)}{c(x)c(y)}+ \ln N]$
+                // Thus $\mathrm{PMI} = \frac1{\ln2}[\ln \frac{c(x,y)}{c(x)c(y)}+ \ln N]$
 
-                    // $N$ and $\ln 2$ are constants participating only in a linear transformation, which means
-                    // after normalization, they do not affect the relative distances.
-                    // we only need to update the cost table with - log(c(x, y) / (c(x) c(y)))
+                // $N$ and $\ln 2$ are constants participating only in a linear transformation, which means
+                // after normalization, they do not affect the relative distances.
+                // we only need to update the cost table with - log(c(x, y) / (c(x) c(y)))
 
-                    double raw_dist = -std::log((c_xy) / (c_x * c_y + 1e-10) + 1e-10); // /lingdist::LOG2; // log base 2
-                    update_queue.emplace_back(c1, c2, raw_dist);
-                    max_raw_dist = std::max(max_raw_dist, raw_dist);
-                    min_raw_dist = std::min(min_raw_dist, raw_dist);
-                }
-                else
-                {
-                    if (c1 == c2)
-                    {
-                        cost.set_cost(c1, c2, 0.0);
-                        cost.set_cost(c2, c1, 0.0);
-                    }
-                    else
-                    {
-                        cost.set_cost(c1, c2, 1.0);
-                        cost.set_cost(c2, c1, 1.0);
-                    }
-                }
+                // Directly log is safe here since we have initialized counts with 1.0 to avoid zero counts.
+                double raw_dist = -std::log((c_xy) / (c_x * c_y));
+                max_raw_dist = std::max(max_raw_dist, raw_dist);
+                min_raw_dist = std::min(min_raw_dist, raw_dist);
+
+                // reuse pair_counts to store raw_dist
+                alignment_count.pair_counts[idx] = raw_dist;
             }
         }
 
-        // Now we only need to update values in update_queue to [0,1] based on min_raw_dist and max_raw_dist
-        for (const auto &item : update_queue)
+        for (size_t r = 0; r < alignment_count.nsyms; r++)
         {
-            const std::string &c1 = std::get<0>(item);
-            const std::string &c2 = std::get<1>(item);
-            double raw_dist = std::get<2>(item);
-            double norm_dist = (raw_dist - min_raw_dist) / (max_raw_dist - min_raw_dist);
-            cost.set_cost(c1, c2, norm_dist);
-            cost.set_cost(c2, c1, norm_dist);
+            // we do not skip diagonal entries
+            // we explicitly set them to 0.0 cost later
+            for (size_t c = 0; c <= r; c++)
+            {
+                const std::string &c1 = alignment_count.syms[r];
+                const std::string &c2 = alignment_count.syms[c];
+                if (r == c)
+                {
+                    cost.set_cost(c1, c2, 0.0);
+                    continue;
+                }
+                size_t idx = alignment_count.rc2idx(r, c);
+                double raw_dist = alignment_count.pair_counts[idx];
+                double norm_dist;
+                if (lingdist::double_equal(max_raw_dist, min_raw_dist))
+                {
+
+                    norm_dist = 1.0; // all distances are identical
+                }
+                else
+                {
+                    norm_dist = (raw_dist - min_raw_dist) / (max_raw_dist - min_raw_dist);
+                }
+                cost.set_cost(c1, c2, norm_dist);
+                cost.set_cost(c2, c1, norm_dist);
+            }
         }
     }
 
@@ -210,7 +248,7 @@ namespace lingdist
             Rprintf("Initialized default cost table.\n");
 
         List report;
-        CharMap char_map(unique_chars);
+        AlignmentCount alignment_count(unique_chars);
         auto rows_vector = lingdist::split_df(data, delim);
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, true);
 
@@ -254,7 +292,7 @@ namespace lingdist
             if (!quiet)
                 Rprintf("Updating cost table...\n");
             prev_cost = cost;
-            update_cost_table(results, cost, char_map);
+            update_cost_table(results, cost, alignment_count);
             // Check convergence
             sum_diff = 0.0;
             for (size_t idx = 0; idx < cost.data.size(); ++idx)
