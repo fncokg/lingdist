@@ -15,42 +15,47 @@ namespace lingdist
         std::vector<std::vector<Point>> result;
         // A stack to store the points to explore and a path from start to the point
         std::vector<std::pair<Point, std::vector<Point>>> stack;
-        std::vector<Point> curr_path;
 
         // Now we start from the bottom-right corner
-        int curr_x = nrow - 1, curr_y = ncol - 1;
-        while (true)
+        stack.push_back(std::make_pair(std::make_pair(nrow - 1, ncol - 1), std::vector<Point>()));
+        while (!stack.empty())
         {
+            // Now we explore the top point in the stack
+            int curr_x = stack.back().first.first;
+            int curr_y = stack.back().first.second;
+            std::vector<Point> curr_path = stack.back().second;
+            stack.pop_back();
+
+            // Add this point to the current path
+            // NOTE: we add point from the end to start, so later we need to reverse the path
+            // We do not insert at the beginning for performance reason: inserting at the beginning of a vector is O(n) while push_back is O(1)
+            curr_path.push_back(std::make_pair(curr_x, curr_y));
+
+            // Check if we reached the start point
             if (curr_x == 0 && curr_y == 0)
             {
-                curr_path.insert(curr_path.begin(), std::make_pair(curr_x, curr_y));
+                // We found a complete path, reverse it and add to result
+                std::reverse(curr_path.begin(), curr_path.end());
                 result.push_back(curr_path);
-                if (stack.empty())
+
+                // Check if we reached max paths, if so, we stop
+                if (static_cast<int>(result.size()) >= max_paths)
                 {
                     break;
                 }
-                else
-                {
-                    auto stack_back = stack.back();
-                    stack.pop_back();
-                    curr_x = stack_back.first.first;
-                    curr_y = stack_back.first.second;
-                    curr_path = stack_back.second;
-                }
             }
-            curr_path.insert(curr_path.begin(), std::make_pair(curr_x, curr_y));
-            Points next_points = dist[curr_x][curr_y].second;
-            curr_x = next_points[0].first;
-            curr_y = next_points[0].second;
-            if (next_points.size() > 1)
+            else
             {
-                for (std::size_t i = 1; i < next_points.size(); i++)
+                // We are not at the start point, so the current point must have source points
+                Points prev_points = dist[curr_x][curr_y].second;
+
+                // Push those source points to the stack for further exploration
+                // The next iteration will explore the last pushed point (DFS)
+                for (auto &pt : prev_points)
                 {
-                    stack.push_back(std::make_pair(next_points[i], curr_path));
-                    if (static_cast<int>(result.size()) >= max_paths)
-                    {
-                        break;
-                    }
+                    // pt is a source point leading to (curr_x, curr_y)
+                    // We will explore it
+                    stack.push_back(std::make_pair(pt, curr_path));
                 }
             }
         }
