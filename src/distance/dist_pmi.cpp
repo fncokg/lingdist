@@ -188,7 +188,7 @@ namespace
                                          this_res.alignments.end());
             }
         }
-        result.distance = nwords > 0 ? sum_dist / nwords : -1.0;
+        result.distance = nwords > 0 ? sum_dist / nwords : NA_REAL;
         return result;
     }
 }

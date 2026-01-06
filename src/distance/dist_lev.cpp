@@ -36,7 +36,7 @@ namespace
             }
         }
         if (nword <= 0)
-            return -1.0;
+            return NA_REAL;
         return ttlDist / static_cast<double>(nword);
     }
 
@@ -45,7 +45,7 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, CostTable cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
+    DataFrame edit_dist_df(const DataFrame &data, CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
     {
         if (check_missing_cost && !cost.is_fast)
         {

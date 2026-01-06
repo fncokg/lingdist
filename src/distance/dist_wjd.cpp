@@ -61,7 +61,7 @@ namespace
                 nitems += 1.0;
             }
         }
-        return nitems > 0.0 ? sum_dist / nitems : 0.0;
+        return nitems > 0.0 ? sum_dist / nitems : NA_REAL;
     }
 }
 
