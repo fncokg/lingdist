@@ -57,7 +57,7 @@ namespace
 
         inline size_t rc2idx(size_t r, size_t c) const
         {
-            if (r > c)
+            if (r < c)
                 std::swap(r, c);
             // return index in lower-triangular matrix
             // There're r full rows before the r-th row, and the r-th row has (r + 1) elements. Therefore, we have r(r+1)/2 elements before this row:
@@ -114,6 +114,8 @@ namespace
         {
             for (const auto &path : res.alignments)
             {
+                if (path.empty())
+                    continue;
                 // This is not mentioned in Wieling(2012), but seems necessary:
                 // If we find multiple optimal paths, we must make sure that pairs in each path only contribute fractionally,
                 // so that this alignment contributes only 1.0 to the all counts.
