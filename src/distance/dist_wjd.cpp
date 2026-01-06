@@ -23,6 +23,8 @@ namespace
                 return cate_level_weights[i];
             }
         }
+        if (len1 == len2)
+            return 0.0;
         // ["A","2"] vs ["A","2","a"]
         return cate_level_weights[min_len - 1];
     }
