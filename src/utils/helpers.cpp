@@ -21,6 +21,7 @@ namespace lingdist
         }
     }
 
+    // TODO: This is heavy, optimize later
     StrVec split(const String &target, const String &delim)
     {
         Function r_split("strsplit");

@@ -1,3 +1,21 @@
+# lingdist 2.3.0 2026-01-06
+
+Fixed several bugs and improved performance.
+
+Bug fixes:
+- In `alignment.cpp`, fixed a bug that caused incorrect alignment results. All of the aligned sequences were accumulated into the last sequence.
+- Fixed all possible issues on double types comparison.
+- Fixed memory leak caused by RcppThread::ProgressBar not being destructed properly.
+- In some corner cases, when nwords==0, all distance functions would return negative distances. Now they return `NA`.
+- In `dist_wjd.cpp`, fixed a bug that caused incorrect WJD distance. `wjd_form` would never return 0.0 in the multi-category case.
+- In `dist_wjd.cpp`, added checks for vector lengths of `multi_form_weights` and `multi_form_cats`.
+- In `dist_wjd.cpp`, added checks for `multi_form_weights` sum being greater than 0.
+- In `cost_table.cpp`, added checks for symbols existing in both row and column names of the cost matrix.
+
+Performance improvements:
+- In `alignment.cpp`, rewrited the DFS algorithm. Avoid insert to the front of a vector, which is slow.
+- In `dist_pmi.cpp`, rewrited the alignment counting logic with a new structure `AlignmentCounter`. Now we use a dense vector to store counts instead of a hash map, and a `vector<string>` for string-to-index searching. This is faster when the number of unique symbols is small, which is usually the case.
+
 # lingdist 2.2.1 2026-01-04
 
 Add `quite` parameters to all distance functions to control printing messages and progress bars.
