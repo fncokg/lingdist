@@ -18,6 +18,8 @@ namespace lingdist
     extern const double LOG2;
 
     // Safe progressbar
+    // To suppress warnings about inheriting from class with virtual functions
+    // ProgressBar destructor is not virtual
     struct SafeProgressBar final : public RcppThread::ProgressBar
     {
         using RcppThread::ProgressBar::ProgressBar;
