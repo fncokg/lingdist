@@ -1,3 +1,7 @@
+# lingdist 2.3.1 2026-01-09
+
+Bug fix: fixed the wrong logic in `AlignmentCount.rx2idx()` that caused incorrect alignment counting in PMI distance calculation.
+
 # lingdist 2.3.0 2026-01-06
 
 Fixed several bugs and improved performance.
