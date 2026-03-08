@@ -209,7 +209,7 @@ namespace
         }
     }
 
-    lingdist::AlignmentResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3)
+    lingdist::AlignmentResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3, const String &normalize_method = "longest")
     {
         lingdist::AlignmentResult result;
         std::size_t ncols = row1.size();
@@ -221,7 +221,7 @@ namespace
             const auto &chars2 = row2[coli];
             if (!chars1.empty() && !chars2.empty())
             {
-                this_res = lingdist::get_string_alignment_result(chars1, chars2, cost, alignment_max_paths);
+                this_res = lingdist::get_string_alignment_result(chars1, chars2, cost, alignment_max_paths, normalize_method);
                 sum_dist += this_res.distance;
                 nwords += 1.0;
                 result.alignments.insert(result.alignments.end(),
@@ -236,7 +236,7 @@ namespace
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
+    List pmi_df(const DataFrame &data, const String &delim, const String &normalize_method, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
         if (!quiet)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", (int)data.nrow());
@@ -279,7 +279,7 @@ namespace lingdist
             std::function<void(int)> loop_body = [&](int idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                results[idx] = pmi_row(rows_vector[rowi], rows_vector[rowj], cost, alignment_max_paths);
+                results[idx] = pmi_row(rows_vector[rowi], rows_vector[rowj], cost, alignment_max_paths, normalize_method);
                 if (bar)
                     (*bar)++;
             };

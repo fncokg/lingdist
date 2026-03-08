@@ -19,7 +19,7 @@ using namespace Rcpp;
 namespace
 {
 
-    std::vector<double> edit_dist_row_vec(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost)
+    std::vector<double> edit_dist_row_vec(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, const String &normalize_method)
     {
         std::size_t ncols = row1.size();
         std::vector<double> dists(ncols, NA_REAL);
@@ -29,7 +29,7 @@ namespace
             const auto &chars2 = row2[coli];
             if (!chars1.empty() && !chars2.empty())
             {
-                dists[coli] = lingdist::edit_dist_core_dp(chars1, chars2, cost);
+                dists[coli] = lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method);
             }
         }
         return dists;
@@ -37,10 +37,10 @@ namespace
 
     double edit_dist_row(const std::vector<lingdist::StrVec> &row1,
                          const std::vector<lingdist::StrVec> &row2,
-                         const lingdist::CostTable &cost)
+                         const lingdist::CostTable &cost,
+                         const String &normalize_method)
     {
-        std::vector<double> dists = edit_dist_row_vec(row1, row2, cost);
-        std::size_t ncols = row1.size();
+        std::vector<double> dists = edit_dist_row_vec(row1, row2, cost, normalize_method);
         double ttlDist = 0.0;
         double nword = 0.0;
         for (auto &dist : dists)
@@ -61,8 +61,13 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet, bool detailed)
+    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool detailed, const String &normalize_method, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
     {
+        if (normalize_method != "longest" && normalize_method != "none")
+        {
+            stop("Unsupported normalize_method. Supported values are 'longest' and 'none'.");
+        }
+
         if (check_missing_cost && !cost.is_fast)
         {
             lingdist::StrVec missing_symbols = cost.check_missing_symbols(data, delim);
@@ -94,7 +99,7 @@ namespace lingdist
             loop_body = [&](std::int32_t idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                dists_vec[idx] = edit_dist_row_vec(rows_vector[rowi], rows_vector[rowj], cost);
+                dists_vec[idx] = edit_dist_row_vec(rows_vector[rowi], rows_vector[rowj], cost, normalize_method);
                 if (bar)
                     (*bar)++;
             };
@@ -105,7 +110,7 @@ namespace lingdist
             loop_body = [&](std::int32_t idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                dists[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost);
+                dists[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost, normalize_method);
                 if (bar)
                     (*bar)++;
             };

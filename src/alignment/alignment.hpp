@@ -17,9 +17,9 @@ namespace lingdist
     // Enumerate all matched optimal paths from recorded DP table
     std::vector<std::vector<Point>> get_matched_paths(std::vector<std::vector<DistPts>> dist, int max_paths = 10);
 
-    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10);
+    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10, const String &normalize_method = "longest");
 
     // Build alignment report list for two token sequences
-    Rcpp::List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10);
+    Rcpp::List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10, const String &normalize_method = "longest");
 
 } // namespace lingdist
