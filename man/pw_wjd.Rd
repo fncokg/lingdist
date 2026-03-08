@@ -10,6 +10,7 @@ pw_wjd(
   multi_form_weights = NULL,
   form_delim = "#",
   cate_delim = "_",
+  detailed = FALSE,
   squareform = FALSE,
   parallel = FALSE,
   n_threads = 2L,
@@ -26,6 +27,8 @@ pw_wjd(
 \item{form_delim}{The delimiter separating different word forms of a single lexical item. Default is "#".}
 
 \item{cate_delim}{The delimiter separating different levels of categories within a word form. Default is "_".}
+
+\item{detailed}{Whether to return detailed information.}
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 

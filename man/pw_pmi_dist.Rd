@@ -7,6 +7,8 @@
 pw_pmi_dist(
   data,
   delim = "",
+  detailed = FALSE,
+  normalize_method = "longest",
   squareform = FALSE,
   parallel = FALSE,
   n_threads = 4L,
@@ -20,6 +22,10 @@ pw_pmi_dist(
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
 \item{delim}{The delimiter separating atomic symbols.}
+
+\item{detailed}{Whether to return detailed information.}
+
+\item{normalize_method}{Method to normalize the distance. Default is "longest".}
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 

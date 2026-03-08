@@ -9,6 +9,7 @@
 #' @param str2 String to be compared.
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
+#' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param return_alignments Whether to return alignment details
 #' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 #' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
@@ -31,6 +32,8 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 #' @param delim The delimiter separating atomic symbols.
+#' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.
+#' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
 #' @param parallel Whether to parallelize the computation.
@@ -58,6 +61,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
 #' @param delim The delimiter separating atomic symbols.
+#' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.
+#' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
@@ -67,7 +72,7 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' @param quiet Whether to suppress all output messages.
 #' @return A list containing the following components:
 #' \item{result}{A dataframe of distances, either in long table form or square form.}
-#' \item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
+#' \item{cost}{The final cost matrix used for distance calculation.}
 #' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 #' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 #' @examples
@@ -75,8 +80,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
-pw_pmi_dist <- function(data, delim = "", normalize_method = "longest", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
+pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -89,6 +94,7 @@ pw_pmi_dist <- function(data, delim = "", normalize_method = "longest", squarefo
 #' @param multi_form_weights Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. If not provided, default weights are used.
 #' @param form_delim The delimiter separating different word forms of a single lexical item. Default is "#".
 #' @param cate_delim The delimiter separating different levels of categories within a word form. Default is "_".
+#' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (lexical items) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across lexical items.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
@@ -97,8 +103,8 @@ pw_pmi_dist <- function(data, delim = "", normalize_method = "longest", squarefo
 #' @examples
 #' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 #' result <- pw_wjd(df, form_delim="#", cate_delim="_")
-pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", squareform = FALSE, parallel = FALSE, n_threads = 2L, quiet = FALSE) {
-    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, squareform, parallel, n_threads, quiet)
+pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", detailed = FALSE, squareform = FALSE, parallel = FALSE, n_threads = 2L, quiet = FALSE) {
+    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, detailed, squareform, parallel, n_threads, quiet)
 }
 
 #' Generate a default cost matrix
