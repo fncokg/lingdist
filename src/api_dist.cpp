@@ -123,7 +123,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' @param quiet Whether to suppress all output messages.
 //' @return A list containing the following components:
 //' \item{result}{A dataframe of distances, either in long table form or square form.}
-//' \item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
+//' \item{cost}{The final cost matrix used for distance calculation.}
 //' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 //' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
 //' @examples
@@ -132,9 +132,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
+    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
 }
 
 //' Compute Weighted Jaccard Distance between all row pairs of a dataframe

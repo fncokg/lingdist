@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim = "", const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false);
+    List pmi_df(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false);
 
     DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, bool quiet = false);
 

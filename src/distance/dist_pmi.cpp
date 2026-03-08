@@ -209,7 +209,7 @@ namespace
         }
     }
 
-    lingdist::AlignmentResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3, const String &normalize_method = "longest")
+    lingdist::AlignmentResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3)
     {
         lingdist::AlignmentResult result;
         std::size_t ncols = row1.size();
@@ -221,7 +221,8 @@ namespace
             const auto &chars2 = row2[coli];
             if (!chars1.empty() && !chars2.empty())
             {
-                this_res = lingdist::get_string_alignment_result(chars1, chars2, cost, alignment_max_paths, normalize_method);
+                // we do not normalize distance here since we only care about alignments here. The distance calculated here is never used. the final distance is calculated in the end with the converged cost table, and the normalization is done in that step.
+                this_res = lingdist::get_string_alignment_result(chars1, chars2, cost, alignment_max_paths, "none");
                 sum_dist += this_res.distance;
                 nwords += 1.0;
                 result.alignments.insert(result.alignments.end(),
@@ -236,7 +237,7 @@ namespace
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim, const String &normalize_method, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
+    List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
         if (!quiet)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", (int)data.nrow());
@@ -279,7 +280,7 @@ namespace lingdist
             std::function<void(int)> loop_body = [&](int idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                results[idx] = pmi_row(rows_vector[rowi], rows_vector[rowj], cost, alignment_max_paths, normalize_method);
+                results[idx] = pmi_row(rows_vector[rowi], rows_vector[rowj], cost, alignment_max_paths);
                 if (bar)
                     (*bar)++;
             };
@@ -317,19 +318,10 @@ namespace lingdist
             warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
         }
 
-        std::vector<double> dists(row_pairs.size());
-        for (std::size_t idx = 0; idx < row_pairs.size(); idx++)
-        {
-            dists[idx] = results[idx].distance;
-        }
-        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
-        if (squareform)
-        {
-            result = lingdist::long2squareform(result, true);
-        }
+        DataFrame result = edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, false, parallel, n_threads, false, true);
+
         report["result"] = result;
-        // Note: when we finish the iteration, i.e. we finish the last update of cost table, the cost table we used to compute distances is actually the previous one.
-        report["cost"] = prev_cost.to_dataframe();
+        report["cost"] = cost.to_dataframe();
         report["sum_diff"] = sum_diff;
         report["mean_diff"] = mean_diff;
         report["converged"] = mean_diff < tol;
