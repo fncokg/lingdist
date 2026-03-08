@@ -1,4 +1,3 @@
-#include <RcppThread.h>
 #include <math.h>
 
 #include "helpers.hpp"
@@ -6,6 +5,8 @@
 #include "dp.hpp"
 #include "alignment.hpp"
 #include "dist.hpp"
+
+#include <RcppThread.h>
 
 using namespace Rcpp;
 
@@ -238,7 +239,7 @@ namespace lingdist
     List pmi_df(const DataFrame &data, const String &delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
         if (!quiet)
-            Rprintf("Starting PMI distance computation on data frame with %d rows...\n", data.nrow());
+            Rprintf("Starting PMI distance computation on data frame with %d rows...\n", (int)data.nrow());
 
         // First, prepare a default cost table
         lingdist::StrVec unique_chars = lingdist::get_all_unique_syms(data, delim, true);

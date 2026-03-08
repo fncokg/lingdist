@@ -48,8 +48,8 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_ali
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE, detailed = FALSE) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet, detailed)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe

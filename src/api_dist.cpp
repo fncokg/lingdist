@@ -92,7 +92,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false, bool detailed = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -105,7 +105,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet);
+    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet, detailed);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
