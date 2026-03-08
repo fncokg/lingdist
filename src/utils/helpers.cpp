@@ -169,4 +169,31 @@ namespace lingdist
         return result;
     }
 
+    DataFrame gen_dist_df(std::vector<double> dists, const StringVector &lab1Col, const StringVector &lab2Col, bool squareform, bool symmetric)
+    {
+        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
+        if (squareform)
+        {
+            result = lingdist::long2squareform(result, symmetric);
+        }
+        return result;
+    }
+
+    DataFrame gen_dist_df_detailed(std::vector<std::vector<double>> dists, const StringVector &lab1Col, const StringVector &lab2Col, const lingdist::StrVec &col_names)
+    {
+        size_t n_vars = col_names.size();
+        int n_pairs = lab1Col.size();
+        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col);
+        for (size_t i = 0; i < n_vars; i++)
+        {
+            NumericVector dist_vec(n_pairs);
+            for (int j = 0; j < n_pairs; j++)
+            {
+                dist_vec[j] = dists[j][i];
+            }
+            result.push_back(dist_vec, col_names[i]);
+        }
+        return result;
+    }
+
 } // namespace lingdist

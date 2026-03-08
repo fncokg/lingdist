@@ -19,26 +19,41 @@ using namespace Rcpp;
 namespace
 {
 
-    double edit_dist_row(const std::vector<lingdist::StrVec> &row1,
-                         const std::vector<lingdist::StrVec> &row2,
-                         const lingdist::CostTable &cost)
+    std::vector<double> edit_dist_row_vec(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost)
     {
         std::size_t ncols = row1.size();
-        double ttlDist = 0.0;
-        int nword = 0;
+        std::vector<double> dists(ncols, NA_REAL);
         for (std::size_t coli = 0; coli < ncols; coli++)
         {
             const auto &chars1 = row1[coli];
             const auto &chars2 = row2[coli];
             if (!chars1.empty() && !chars2.empty())
             {
-                ttlDist += lingdist::edit_dist_core_dp(chars1, chars2, cost);
-                nword += 1;
+                dists[coli] = lingdist::edit_dist_core_dp(chars1, chars2, cost);
             }
         }
-        if (nword <= 0)
+        return dists;
+    }
+
+    double edit_dist_row(const std::vector<lingdist::StrVec> &row1,
+                         const std::vector<lingdist::StrVec> &row2,
+                         const lingdist::CostTable &cost)
+    {
+        std::vector<double> dists = edit_dist_row_vec(row1, row2, cost);
+        std::size_t ncols = row1.size();
+        double ttlDist = 0.0;
+        double nword = 0.0;
+        for (auto &dist : dists)
+        {
+            if (!Rcpp::NumericVector::is_na(dist))
+            {
+                ttlDist += dist;
+                nword += 1.0;
+            }
+        }
+        if (nword <= 0.0)
             return NA_REAL;
-        return ttlDist / static_cast<double>(nword);
+        return ttlDist / nword;
     }
 
 }
@@ -46,7 +61,7 @@ namespace
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet)
+    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool squareform, bool symmetric, bool parallel, int n_threads, bool check_missing_cost, bool quiet, bool detailed)
     {
         if (check_missing_cost && !cost.is_fast)
         {
@@ -67,17 +82,35 @@ namespace lingdist
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
-        std::vector<double> dists(row_pairs.size());
         std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
             bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
-        std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
+        std::function<void(std::int32_t)> loop_body;
+        std::vector<std::vector<double>> dists_vec(row_pairs.size());
+        std::vector<double> dists(row_pairs.size());
+        if (detailed)
         {
-            auto [rowi, rowj] = row_pairs[idx];
-            dists[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost);
-            if (bar)
-                (*bar)++;
-        };
+
+            loop_body = [&](std::int32_t idx)
+            {
+                auto [rowi, rowj] = row_pairs[idx];
+                dists_vec[idx] = edit_dist_row_vec(rows_vector[rowi], rows_vector[rowj], cost);
+                if (bar)
+                    (*bar)++;
+            };
+        }
+        else
+        {
+
+            loop_body = [&](std::int32_t idx)
+            {
+                auto [rowi, rowj] = row_pairs[idx];
+                dists[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost);
+                if (bar)
+                    (*bar)++;
+            };
+        }
+
         if (parallel)
         {
             RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
@@ -86,12 +119,14 @@ namespace lingdist
         {
             lingdist::singleFor(0, n_row_pairs, loop_body);
         }
-        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
-        if (squareform)
+        if (detailed)
         {
-            result = lingdist::long2squareform(result, symmetric);
+            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
         }
-        return result;
+        else
+        {
+            return gen_dist_df(dists, lab1Col, lab2Col, squareform, symmetric);
+        }
     }
 
 }

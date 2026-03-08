@@ -32,8 +32,8 @@ namespace lingdist
             stop("Cost matrix must be square.");
         }
 
-        StrVec row_names = as<StrVec>(cost_mat.attr("row.names"));
-        StrVec col_names = as<StrVec>(cost_mat.names());
+        lingdist::StrVec row_names = as<lingdist::StrVec>(cost_mat.attr("row.names"));
+        lingdist::StrVec col_names = as<lingdist::StrVec>(cost_mat.names());
 
         table.is_fast = false;
         table.nsyms = static_cast<int>(row_names.size());

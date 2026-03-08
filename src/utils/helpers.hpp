@@ -61,4 +61,9 @@ namespace lingdist
 
     std::tuple<StringVector, StringVector, std::vector<std::pair<int, int>>> get_row_pairs(const DataFrame &data, bool symmetric);
 
+    // Generate distance DataFrame from distance vectors and labels
+    DataFrame gen_dist_df(std::vector<double> dists, const StringVector &lab1Col, const StringVector &lab2Col, bool squareform, bool symmetric);
+
+    DataFrame gen_dist_df_detailed(std::vector<std::vector<double>> dists, const StringVector &lab1Col, const StringVector &lab2Col, const lingdist::StrVec &col_names);
+
 } // namespace lingdist
