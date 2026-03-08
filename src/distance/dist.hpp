@@ -11,6 +11,6 @@ namespace lingdist
     DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, bool quiet = false);
 
     DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
-                     const std::vector<double> &multi_form_weights, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false);
+                     const std::vector<double> &multi_form_weights, const String &form_delim = "#", const String &cate_delim = "_", bool detailed = false, bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false);
 
 }

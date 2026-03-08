@@ -41,19 +41,18 @@ namespace
                          const String &normalize_method)
     {
         std::vector<double> dists = edit_dist_row_vec(row1, row2, cost, normalize_method);
-        double ttlDist = 0.0;
-        double nword = 0.0;
+        double sum_dist = 0.0, nwords = 0.0;
         for (auto &dist : dists)
         {
             if (!Rcpp::NumericVector::is_na(dist))
             {
-                ttlDist += dist;
-                nword += 1.0;
+                sum_dist += dist;
+                nwords += 1.0;
             }
         }
-        if (nword <= 0.0)
+        if (nwords <= 0.0)
             return NA_REAL;
-        return ttlDist / nword;
+        return sum_dist / nwords;
     }
 
 }
