@@ -63,14 +63,14 @@ namespace lingdist
     }
 
     // id pairs -> alignment result with strings
-    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths)
+    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths, const String &normalize_method)
     {
         AlignmentResult report;
         std::string char1, char2, opt;
         int curr_x, curr_y, prev_x, prev_y;
         auto dist = edit_dist_core_dp_record(chars1, chars2, cost); // Original line
         auto paths = get_matched_paths(dist, max_paths);
-        double result = dist[chars2.size()][chars1.size()].first;
+        double result = normalize_edit_dist(dist[chars2.size()][chars1.size()].first, chars1, chars2, normalize_method); // Original line
         report.distance = result;
 
         for (auto &path : paths)
@@ -92,11 +92,11 @@ namespace lingdist
     }
 
     // format alignment result as R List
-    List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths)
+    List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths, const String &normalize_method)
     {
         List report;
         List path_dfs;
-        AlignmentResult result = get_string_alignment_result(chars1, chars2, cost, max_paths);
+        AlignmentResult result = get_string_alignment_result(chars1, chars2, cost, max_paths, normalize_method);
         std::string char1, char2, opt;
 
         for (auto &path : result.alignments)
@@ -117,6 +117,7 @@ namespace lingdist
             path_dfs.push_back(path_df);
         }
         report["alignments"] = path_dfs;
+        report["distance"] = result.distance;
         return report;
     }
 

@@ -39,7 +39,7 @@ namespace
 //' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 //' alignments <- res$alignments
 //[[Rcpp::export]]
-List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
+List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", const String &normalize_method = "longest", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -56,11 +56,11 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
     lingdist::StrVec chars2 = lingdist::split(str2, delim);
     if (return_alignments)
     {
-        return lingdist::get_string_alignment(chars1, chars2, cost);
+        return lingdist::get_string_alignment(chars1, chars2, cost, 10, normalize_method);
     }
     else
     {
-        double result = lingdist::edit_dist_core_dp(chars1, chars2, cost);
+        double result = lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method);
         List report;
         report["distance"] = result;
         return report;
@@ -92,7 +92,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false, bool detailed = false)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -105,7 +105,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    return lingdist::edit_dist_df(data, cost, delim, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet, detailed);
+    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
@@ -132,9 +132,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
+    return lingdist::pmi_df(data, delim, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
 }
 
 //' Compute Weighted Jaccard Distance between all row pairs of a dataframe

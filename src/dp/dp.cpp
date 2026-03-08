@@ -6,7 +6,7 @@
 namespace lingdist
 {
     // Basic DP distance, return only distance value
-    double edit_dist_core_dp(const StrVec &vec1, const StrVec &vec2, const CostTable &cost)
+    double edit_dist_core_dp(const StrVec &vec1, const StrVec &vec2, const CostTable &cost, const String &normalize_method)
     {
         std::size_t len1 = vec1.size(), len2 = vec2.size();
         std::size_t nrow = len2 + 1, ncol = len1 + 1;
@@ -43,7 +43,7 @@ namespace lingdist
                 });
             }
         }
-        return at(len2, len1);
+        return normalize_edit_dist(at(len2, len1), vec1, vec2, normalize_method);
     }
 
     // DP with backpointers, return full DP table with paths
@@ -92,6 +92,30 @@ namespace lingdist
             }
         }
         return dist;
+    }
+
+    // For performance reasons, we do not check the validity of `method` here. Checking should be done at the higher level before calling this function.
+    double normalize_edit_dist(double dist, const StrVec &vec1, const StrVec &vec2, const String &method)
+    {
+        // fastest case: no normalization
+        if (method == "none")
+        {
+            return dist; // no normalization
+        }
+
+        std::size_t len1 = vec1.size();
+        std::size_t len2 = vec2.size();
+        if (method == "longest")
+        {
+            size_t max_len = std::max(len1, len2);
+            if (max_len == 0)
+                return 0.0; // both strings are empty
+            return dist / static_cast<double>(max_len);
+        }
+        else
+        {
+            return dist; // no normalization
+        }
     }
 
 } // namespace lingdist
