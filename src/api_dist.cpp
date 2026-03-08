@@ -156,10 +156,10 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed 
 //' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 //' result <- pw_wjd(df, form_delim="#", cate_delim="_")
 //[[Rcpp::export]]
-DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false)
+DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool detailed = false, bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false)
 {
     std::vector<double> cate_weights, form_weights;
     cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);
     form_weights = multi_form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(multi_form_weights)) : make_default_weights(10);
-    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, squareform, parallel, n_threads, quiet);
+    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, detailed, squareform, parallel, n_threads, quiet);
 }

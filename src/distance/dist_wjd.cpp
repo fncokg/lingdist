@@ -34,14 +34,15 @@ namespace
         return cate_level_weights[min_len - 1];
     }
 
-    double wjd_row(const std::vector<std::vector<lingdist::StrVec>> &row1,
-                   const std::vector<std::vector<lingdist::StrVec>> &row2,
-                   const std::vector<double> &cate_level_weights,
-                   const std::vector<double> &multi_form_weights)
+    std::vector<double> wjd_row_vec(const std::vector<std::vector<lingdist::StrVec>> &row1,
+                                    const std::vector<std::vector<lingdist::StrVec>> &row2,
+                                    const std::vector<double> &cate_level_weights,
+                                    const std::vector<double> &multi_form_weights)
     {
+        std::vector<double> dists(row1.size(), NA_REAL);
         double sum_dist = 0.0, nitems = 0.0;
         if (row1.size() != row2.size() || row1.size() == 0)
-            return 0.0;
+            return dists;
 
         for (size_t icol = 0; icol < row1.size(); icol++)
         {
@@ -55,7 +56,7 @@ namespace
                 if (max_len > multi_form_weights.size())
                 {
                     Rcpp::stop("Number of forms exceeds length of multi_form_weights.");
-                    return NA_REAL;
+                    return dists;
                 }
                 for (size_t i = 0; i < max_len; i++)
                 {
@@ -72,20 +73,39 @@ namespace
                 else
                 {
                     Rcpp::stop("Sum of multi_form_weights should be greater than 0.");
-                    return NA_REAL;
+                    return dists;
                 }
-                sum_dist += this_dist;
+                dists[icol] = this_dist;
+            }
+        }
+        return dists;
+    }
+
+    double wjd_row(const std::vector<std::vector<lingdist::StrVec>> &row1,
+                   const std::vector<std::vector<lingdist::StrVec>> &row2,
+                   const std::vector<double> &cate_level_weights,
+                   const std::vector<double> &multi_form_weights)
+    {
+        std::vector<double> dists = wjd_row_vec(row1, row2, cate_level_weights, multi_form_weights);
+        double sum_dist = 0.0, nitems = 0.0;
+        for (auto &dist : dists)
+        {
+            if (!Rcpp::NumericVector::is_na(dist))
+            {
+                sum_dist += dist;
                 nitems += 1.0;
             }
         }
-        return nitems > 0.0 ? sum_dist / nitems : NA_REAL;
+        if (nitems <= 0.0)
+            return NA_REAL;
+        return sum_dist / nitems;
     }
 }
 
 namespace lingdist
 {
     DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
-                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool squareform, bool parallel, int n_threads, bool quiet)
+                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool detailed, bool squareform, bool parallel, int n_threads, bool quiet)
     {
 
         auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim);
@@ -93,18 +113,33 @@ namespace lingdist
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
-        std::vector<double> dists(row_pairs.size());
         // RcppThread::ProgressBar *bar = nullptr;
         std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
             bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
-        std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
+        std::function<void(std::int32_t)> loop_body;
+        std::vector<double> dists(row_pairs.size());
+        std::vector<std::vector<double>> dists_vec(row_pairs.size());
+        if (detailed)
         {
-            auto [rowi, rowj] = row_pairs[idx];
-            dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
-            if (bar)
-                (*bar)++;
-        };
+            loop_body = [&](std::int32_t idx)
+            {
+                auto [rowi, rowj] = row_pairs[idx];
+                dists_vec[idx] = wjd_row_vec(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
+                if (bar)
+                    (*bar)++;
+            };
+        }
+        else
+        {
+            loop_body = [&](std::int32_t idx)
+            {
+                auto [rowi, rowj] = row_pairs[idx];
+                dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
+                if (bar)
+                    (*bar)++;
+            };
+        }
         if (parallel)
         {
             RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
@@ -113,11 +148,13 @@ namespace lingdist
         {
             lingdist::singleFor(0, n_row_pairs, loop_body);
         }
-        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
-        if (squareform)
+        if (detailed)
         {
-            result = lingdist::long2squareform(result, true);
+            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
         }
-        return result;
+        else
+        {
+            return gen_dist_df(dists, lab1Col, lab2Col, squareform, true);
+        }
     }
 }
