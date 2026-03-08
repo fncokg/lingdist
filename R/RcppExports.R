@@ -20,8 +20,8 @@
 #' dist <- string_edit_dist("leaf","leaves")$distance
 #' res <- string_edit_dist("ph_l_i_z","p_l_i_s",cost_mat=cost.mat,delim="_")
 #' alignments <- res$alignments
-string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", return_alignments = FALSE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
-    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost, quiet)
+string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_method = "longest", return_alignments = FALSE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
+    .Call(`_lingdist_string_edit_dist`, str1, str2, cost_mat, delim, normalize_method, return_alignments, default_sub_cost, default_ins_del_cost, quiet)
 }
 
 #' Compute edit distance between all row pairs of a dataframe
@@ -75,8 +75,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
-pw_pmi_dist <- function(data, delim = "", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
+pw_pmi_dist <- function(data, delim = "", normalize_method = "longest", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe

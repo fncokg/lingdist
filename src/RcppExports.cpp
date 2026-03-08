@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // string_edit_dist
-List string_edit_dist(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, bool return_alignments, double default_sub_cost, double default_ins_del_cost, bool quiet);
-RcppExport SEXP _lingdist_string_edit_dist(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP return_alignmentsSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP, SEXP quietSEXP) {
+List string_edit_dist(const String& str1, const String& str2, Nullable<DataFrame> cost_mat, const String& delim, const String& normalize_method, bool return_alignments, double default_sub_cost, double default_ins_del_cost, bool quiet);
+RcppExport SEXP _lingdist_string_edit_dist(SEXP str1SEXP, SEXP str2SEXP, SEXP cost_matSEXP, SEXP delimSEXP, SEXP normalize_methodSEXP, SEXP return_alignmentsSEXP, SEXP default_sub_costSEXP, SEXP default_ins_del_costSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,11 +21,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const String& >::type str2(str2SEXP);
     Rcpp::traits::input_parameter< Nullable<DataFrame> >::type cost_mat(cost_matSEXP);
     Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
+    Rcpp::traits::input_parameter< const String& >::type normalize_method(normalize_methodSEXP);
     Rcpp::traits::input_parameter< bool >::type return_alignments(return_alignmentsSEXP);
     Rcpp::traits::input_parameter< double >::type default_sub_cost(default_sub_costSEXP);
     Rcpp::traits::input_parameter< double >::type default_ins_del_cost(default_ins_del_costSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(string_edit_dist(str1, str2, cost_mat, delim, return_alignments, default_sub_cost, default_ins_del_cost, quiet));
+    rcpp_result_gen = Rcpp::wrap(string_edit_dist(str1, str2, cost_mat, delim, normalize_method, return_alignments, default_sub_cost, default_ins_del_cost, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -53,13 +54,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // pw_pmi_dist
-List pw_pmi_dist(const DataFrame& data, const String& delim, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet);
-RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP alignment_max_pathsSEXP, SEXP quietSEXP) {
+List pw_pmi_dist(const DataFrame& data, const String& delim, const String& normalize_method, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet);
+RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP normalize_methodSEXP, SEXP squareformSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP alignment_max_pathsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const DataFrame& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const String& >::type delim(delimSEXP);
+    Rcpp::traits::input_parameter< const String& >::type normalize_method(normalize_methodSEXP);
     Rcpp::traits::input_parameter< bool >::type squareform(squareformSEXP);
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
@@ -67,7 +69,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type alignment_max_paths(alignment_max_pathsSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet));
+    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -130,9 +132,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 8},
+    {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 9},
     {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 13},
-    {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 9},
+    {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 10},
     {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 9},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 2},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 3},
