@@ -1,6 +1,6 @@
 #include "dispatcher.hpp"
 
-double dispatcher_weighting(const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2, std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)> dist_func, const std::vector<double> &weights)
+double dispatcher_weighting(const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2, lingdist::DistFunc dist_func, const std::vector<double> &weights)
 {
     double sum_dist = 0.0, sum_weights = 0.0;
     size_t nforms1 = forms1.size(), nforms2 = forms2.size();
@@ -21,7 +21,7 @@ double dispatcher_weighting(const std::vector<lingdist::StrVec> &forms1, const s
 }
 
 // mode: 0 for mean, 1 for min
-double dispatcher_all(const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2, std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)> dist_func, int mode)
+double dispatcher_all(const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2, lingdist::DistFunc dist_func, int mode)
 {
     std::vector<double> dists;
     size_t nforms1 = forms1.size(), nforms2 = forms2.size();
@@ -48,5 +48,40 @@ double dispatcher_all(const std::vector<lingdist::StrVec> &forms1, const std::ve
     else
     {
         return std::accumulate(dists.begin(), dists.end(), 0.0) / dists.size();
+    }
+}
+
+double dispatcher_first(const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2, lingdist::DistFunc dist_func)
+{
+    if (forms1.empty() || forms2.empty())
+        return NA_REAL;
+    return dist_func(forms1[0], forms2[0]);
+}
+
+lingdist::FormsDispatcher make_dispatcher(const String &forms_strategy, lingdist::DistFunc dist_func, const std::vector<double> &forms_weights)
+{
+    if (forms_strategy == "weighting")
+    {
+        return [dist_func, forms_weights](const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2)
+        { return dispatcher_weighting(forms1, forms2, dist_func, forms_weights); };
+    }
+    else if (forms_strategy == "mean_all")
+    {
+        return [dist_func](const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2)
+        { return dispatcher_all(forms1, forms2, dist_func, 0); };
+    }
+    else if (forms_strategy == "min_all")
+    {
+        return [dist_func](const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2)
+        { return dispatcher_all(forms1, forms2, dist_func, 1); };
+    }
+    else if (forms_strategy == "off" || forms_strategy == "first")
+    {
+        return [dist_func](const std::vector<lingdist::StrVec> &forms1, const std::vector<lingdist::StrVec> &forms2)
+        { return dispatcher_first(forms1, forms2, dist_func); };
+    }
+    else
+    {
+        stop("Unsupported forms_strategy. Supported values are 'weighting', 'mean_all', 'min_all', 'off' and 'first'.");
     }
 }

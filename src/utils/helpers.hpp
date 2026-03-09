@@ -32,14 +32,18 @@ namespace lingdist
         using RcppThread::ProgressBar::ProgressBar;
     };
 
-    // Single-threaded for loop utility
-    void singleFor(int begin, int end, std::function<void(int)> f);
-
     // Common type aliases
     using Point = std::pair<int, int>;
     using Points = std::vector<Point>;
     using DistPts = std::pair<double, Points>;
     using StrVec = std::vector<std::string>;
+    using FormsDispatcher = std::function<double(const std::vector<lingdist::StrVec> &, const std::vector<lingdist::StrVec> &)>;
+    using DistFunc = std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)>;
+
+    // loop utility
+    void singleFor(int begin, int end, std::function<void(int)> f);
+
+    std::vector<double> dist_row_pair(const std::vector<std::vector<lingdist::StrVec>> &row1, const std::vector<std::vector<lingdist::StrVec>> &row2, FormsDispatcher dispatcher);
 
     // --- String Utils ---
 
@@ -49,7 +53,7 @@ namespace lingdist
     // Split an entire DataFrame into rows of token vectors
     std::vector<std::vector<StrVec>> split_df(const Rcpp::DataFrame &data, const Rcpp::String &delim);
 
-    std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2);
+    std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1);
 
     // Extract all unique tokens from a DataFrame
     StrVec get_all_unique_syms(const Rcpp::DataFrame &data, const Rcpp::String &delim, bool include_empty = true);
@@ -62,9 +66,7 @@ namespace lingdist
     std::tuple<StringVector, StringVector, std::vector<std::pair<int, int>>> get_row_pairs(const DataFrame &data, bool symmetric);
 
     // Generate distance DataFrame from distance vectors and labels
-    DataFrame gen_dist_df(std::vector<double> dists, const StringVector &lab1Col, const StringVector &lab2Col, bool squareform, bool symmetric);
-
-    DataFrame gen_dist_df_detailed(std::vector<std::vector<double>> dists, const StringVector &lab1Col, const StringVector &lab2Col, const lingdist::StrVec &col_names);
+    DataFrame gen_dist_df(std::vector<std::vector<double>> dists_vec, const StringVector &lab1Col, const StringVector &lab2Col, bool detailed, const lingdist::StrVec &col_names, bool squareform, bool symmetric);
 
     // --- Vector Utils ---
     double nan_mean(const std::vector<double> &vec);

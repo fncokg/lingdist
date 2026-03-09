@@ -95,7 +95,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -108,7 +108,8 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, symmetric, n_threads, check_missing_cost, quiet);
+    std::vector<double> form_weights_vec = form_weights.isNotNull() ? as<std::vector<double>>(form_weights) : make_default_weights(10);
+    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, form_strategy, form_delim, form_weights_vec, squareform, symmetric, n_threads, check_missing_cost, quiet);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
@@ -161,10 +162,9 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed 
 //' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 //' result <- pw_wjd(df, form_delim="#", cate_delim="_")
 //[[Rcpp::export]]
-DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool detailed = false, bool squareform = false, int n_threads = 2, bool quiet = false)
+DataFrame pw_wjd(const DataFrame &data, const String &cate_delim = "_", Nullable<NumericVector> cate_weights = R_NilValue, const String &form_strategy = "weighting", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool detailed = false, bool squareform = false, int n_threads = 2, bool quiet = false)
 {
-    std::vector<double> cate_weights, form_weights;
-    cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);
-    form_weights = multi_form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(multi_form_weights)) : make_default_weights(10);
-    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, detailed, squareform, n_threads, quiet);
+    std::vector<double> cate_weights_vec = cate_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_weights)) : make_default_weights(10);
+    std::vector<double> form_weights_vec = form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(form_weights)) : make_default_weights(10);
+    return lingdist::wjd_df(data, cate_delim, cate_weights_vec, form_strategy, form_delim, form_weights_vec, detailed, squareform, n_threads, quiet);
 }

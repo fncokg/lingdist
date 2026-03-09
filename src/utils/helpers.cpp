@@ -22,6 +22,22 @@ namespace lingdist
         }
     }
 
+    std::vector<double> dist_row_pair(const std::vector<std::vector<lingdist::StrVec>> &row1, const std::vector<std::vector<lingdist::StrVec>> &row2, FormsDispatcher dispatcher)
+    {
+        size_t ncols = row1.size();
+        std::vector<double> dists(ncols, NA_REAL);
+        for (size_t coli = 0; coli < ncols; coli++)
+        {
+            const auto &cells1 = row1[coli];
+            const auto &cells2 = row2[coli];
+            if (!cells1.empty() && !cells2.empty())
+            {
+                dists[coli] = dispatcher(cells1, cells2);
+            }
+        }
+        return dists;
+    }
+
     // TODO: This is heavy, optimize later
     StrVec split(const String &target, const String &delim)
     {
@@ -49,7 +65,7 @@ namespace lingdist
         return rows_vector;
     }
 
-    std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2)
+    std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1)
     {
         int nrows = data.nrow(), ncols = data.ncol();
         std::vector<std::vector<std::vector<StrVec>>> rows_vector;
@@ -62,9 +78,16 @@ namespace lingdist
             {
                 const StrVec &col = data[j];
                 std::vector<StrVec> cell_vector;
-                for (auto &part : split(col[i], delim1))
+                if (ignore_delim1)
                 {
-                    cell_vector.push_back(split(part, delim2));
+                    cell_vector.push_back(split(col[i], delim2));
+                }
+                else
+                {
+                    for (auto &part : split(col[i], delim1))
+                    {
+                        cell_vector.push_back(split(part, delim2));
+                    }
                 }
                 row_vector.push_back(std::move(cell_vector));
             }
@@ -169,29 +192,36 @@ namespace lingdist
         return result;
     }
 
-    DataFrame gen_dist_df(std::vector<double> dists, const StringVector &lab1Col, const StringVector &lab2Col, bool squareform, bool symmetric)
+    DataFrame gen_dist_df(std::vector<std::vector<double>> dists_vec, const StringVector &lab1Col, const StringVector &lab2Col, bool detailed, const lingdist::StrVec &col_names, bool squareform, bool symmetric)
     {
-        DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col, Named("dist") = NumericVector::import(dists.begin(), dists.end()));
-        if (squareform)
-        {
-            result = lingdist::long2squareform(result, symmetric);
-        }
-        return result;
-    }
-
-    DataFrame gen_dist_df_detailed(std::vector<std::vector<double>> dists, const StringVector &lab1Col, const StringVector &lab2Col, const lingdist::StrVec &col_names)
-    {
-        size_t n_vars = col_names.size();
-        int n_pairs = lab1Col.size();
         DataFrame result = DataFrame::create(Named("lab1") = lab1Col, Named("lab2") = lab2Col);
-        for (size_t i = 0; i < n_vars; i++)
+        if (detailed)
         {
-            NumericVector dist_vec(n_pairs);
-            for (int j = 0; j < n_pairs; j++)
+            size_t n_vars = col_names.size();
+            int n_pairs = lab1Col.size();
+            for (size_t i = 0; i < n_vars; i++)
             {
-                dist_vec[j] = dists[j][i];
+                NumericVector dist_vec(n_pairs);
+                for (int j = 0; j < n_pairs; j++)
+                {
+                    dist_vec[j] = dists_vec[j][i];
+                }
+                result.push_back(dist_vec, col_names[i]);
             }
-            result.push_back(dist_vec, col_names[i]);
+        }
+        else
+        {
+            std::vector<double> dists(dists_vec.size());
+            for (size_t i = 0; i < dists_vec.size(); i++)
+            {
+                dists[i] = lingdist::nan_mean(dists_vec[i]);
+            }
+            NumericVector dist_col = NumericVector::import(dists.begin(), dists.end());
+            result.push_back(dist_col, "dist");
+            if (squareform)
+            {
+                result = lingdist::long2squareform(result, symmetric);
+            }
         }
         return result;
     }

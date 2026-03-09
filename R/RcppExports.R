@@ -51,8 +51,8 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, symmetric = TRUE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, detailed, normalize_method, squareform, symmetric, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, normalize_method = "longest", form_strategy = "off", form_delim = "#", form_weights = NULL, squareform = FALSE, symmetric = TRUE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, detailed, normalize_method, form_strategy, form_delim, form_weights, squareform, symmetric, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe
@@ -102,8 +102,8 @@ pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "
 #' @examples
 #' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 #' result <- pw_wjd(df, form_delim="#", cate_delim="_")
-pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", detailed = FALSE, squareform = FALSE, n_threads = 2L, quiet = FALSE) {
-    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, detailed, squareform, n_threads, quiet)
+pw_wjd <- function(data, cate_delim = "_", cate_weights = NULL, form_strategy = "weighting", form_delim = "#", form_weights = NULL, detailed = FALSE, squareform = FALSE, n_threads = 2L, quiet = FALSE) {
+    .Call(`_lingdist_pw_wjd`, data, cate_delim, cate_weights, form_strategy, form_delim, form_weights, detailed, squareform, n_threads, quiet)
 }
 
 #' Generate a default cost matrix
