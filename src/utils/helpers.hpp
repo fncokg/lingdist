@@ -66,4 +66,7 @@ namespace lingdist
 
     DataFrame gen_dist_df_detailed(std::vector<std::vector<double>> dists, const StringVector &lab1Col, const StringVector &lab2Col, const lingdist::StrVec &col_names);
 
+    // --- Vector Utils ---
+    double nan_mean(const std::vector<double> &vec);
+
 } // namespace lingdist

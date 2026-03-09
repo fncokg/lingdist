@@ -237,7 +237,7 @@ namespace
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method, bool squareform, bool parallel, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
+    List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method, bool squareform, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
         if (!quiet)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", (int)data.nrow());
@@ -260,10 +260,7 @@ namespace lingdist
         if (!quiet)
         {
             Rprintf("Starting PMI iterations with %d row pairs...\n", n_row_pairs);
-            if (parallel)
-                Rprintf("Using %d threads for parallel computation.\n", n_threads);
-            else
-                Rprintf("Using single-threaded computation.\n");
+            Rprintf("Using %d threads for (parallel) computation.\n", n_threads);
         }
         double sum_diff = 0.0, mean_diff = 0.0;
         std::vector<lingdist::AlignmentResult> results(n_row_pairs);
@@ -284,14 +281,7 @@ namespace lingdist
                 if (bar)
                     (*bar)++;
             };
-            if (parallel)
-            {
-                RcppThread::parallelFor(0, n_row_pairs, loop_body, n_threads);
-            }
-            else
-            {
-                lingdist::singleFor(0, n_row_pairs, loop_body);
-            }
+            RcppThread::parallelFor(0, n_row_pairs, loop_body, n_threads);
 
             if (!quiet)
                 Rprintf("Updating cost table...\n");
@@ -318,7 +308,7 @@ namespace lingdist
             warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
         }
 
-        DataFrame result = edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, false, parallel, n_threads, false, true);
+        DataFrame result = edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, false, n_threads, false, true);
 
         report["result"] = result;
         report["cost"] = cost.to_dataframe();
