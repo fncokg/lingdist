@@ -35,13 +35,12 @@ namespace
         return cate_level_weights[min_len - 1];
     }
 
-    std::vector<double> wjd_row_vec(const std::vector<std::vector<lingdist::StrVec>> &row1,
-                                    const std::vector<std::vector<lingdist::StrVec>> &row2,
-                                    const std::vector<double> &cate_level_weights,
-                                    const std::vector<double> &multi_form_weights)
+    std::vector<double> wjd_row(const std::vector<std::vector<lingdist::StrVec>> &row1,
+                                const std::vector<std::vector<lingdist::StrVec>> &row2,
+                                const std::vector<double> &cate_level_weights,
+                                const std::vector<double> &multi_form_weights)
     {
         std::vector<double> dists(row1.size(), NA_REAL);
-        double sum_dist = 0.0, nitems = 0.0;
         if (row1.size() != row2.size() || row1.size() == 0)
             return dists;
         std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)> dist_func = [&](const lingdist::StrVec &cells1, const lingdist::StrVec &cells2)
@@ -53,15 +52,6 @@ namespace
             dists[icol] = dispatcher_weighting(cells1, cells2, dist_func, multi_form_weights);
         }
         return dists;
-    }
-
-    double wjd_row(const std::vector<std::vector<lingdist::StrVec>> &row1,
-                   const std::vector<std::vector<lingdist::StrVec>> &row2,
-                   const std::vector<double> &cate_level_weights,
-                   const std::vector<double> &multi_form_weights)
-    {
-        std::vector<double> dists = wjd_row_vec(row1, row2, cate_level_weights, multi_form_weights);
-        return lingdist::nan_mean(dists);
     }
 }
 
@@ -88,7 +78,7 @@ namespace lingdist
             loop_body = [&](std::int32_t idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                dists_vec[idx] = wjd_row_vec(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
+                dists_vec[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
                 if (bar)
                     (*bar)++;
             };
@@ -100,7 +90,7 @@ namespace lingdist
             loop_body = [&](std::int32_t idx)
             {
                 auto [rowi, rowj] = row_pairs[idx];
-                dists[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
+                dists[idx] = lingdist::nan_mean(wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights));
                 if (bar)
                     (*bar)++;
             };

@@ -51,8 +51,8 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
-pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, symmetric = TRUE, parallel = FALSE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
-    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, detailed, normalize_method, squareform, symmetric, parallel, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
+pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, symmetric = TRUE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
+    .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, detailed, normalize_method, squareform, symmetric, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
 }
 
 #' Compute PMI distance between all row pairs of a dataframe
@@ -80,8 +80,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
-pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, parallel = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet)
+pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -96,15 +96,14 @@ pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "
 #' @param cate_delim The delimiter separating different levels of categories within a word form. Default is "_".
 #' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (lexical items) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across lexical items.
 #' @param squareform Whether to return a dataframe in squareform.
-#' @param parallel Whether to parallelize the computation.
 #' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 #' @param quiet Whether to suppress all output messages.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 #' result <- pw_wjd(df, form_delim="#", cate_delim="_")
-pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", detailed = FALSE, squareform = FALSE, parallel = FALSE, n_threads = 2L, quiet = FALSE) {
-    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, detailed, squareform, parallel, n_threads, quiet)
+pw_wjd <- function(data, cate_level_weights = NULL, multi_form_weights = NULL, form_delim = "#", cate_delim = "_", detailed = FALSE, squareform = FALSE, n_threads = 2L, quiet = FALSE) {
+    .Call(`_lingdist_pw_wjd`, data, cate_level_weights, multi_form_weights, form_delim, cate_delim, detailed, squareform, n_threads, quiet)
 }
 
 #' Generate a default cost matrix
