@@ -88,12 +88,13 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
+//' df2 <- as.data.frame(rbind(a=c("ph_l_i_z#b_l_i_s","k_o_l"),b=c("b_l_i_s", "k_a:_l#k_o")))
 //' cost.mat <- data.frame()
 //' result <- pw_edit_dist(df, delim="_")
 //' result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-//' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
+//' result <- pw_edit_dist(df2, cost_mat=cost.mat, delim="_", form_strategy="weighting", form_delim="#", form_weights=c(0.7, 0.3))
 //[[Rcpp::export]]
 DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
