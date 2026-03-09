@@ -196,4 +196,21 @@ namespace lingdist
         return result;
     }
 
+    double nan_mean(const std::vector<double> &vec)
+    {
+        double sum = 0.0;
+        int count = 0;
+        for (double val : vec)
+        {
+            if (!Rcpp::NumericVector::is_na(val))
+            {
+                sum += val;
+                count++;
+            }
+        }
+        if (count == 0)
+            return NA_REAL;
+        return sum / count;
+    }
+
 } // namespace lingdist

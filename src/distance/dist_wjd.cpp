@@ -2,6 +2,7 @@
 #include <RcppThread.h>
 
 #include "helpers.hpp"
+#include "dispatcher.hpp"
 
 using namespace Rcpp;
 
@@ -43,40 +44,13 @@ namespace
         double sum_dist = 0.0, nitems = 0.0;
         if (row1.size() != row2.size() || row1.size() == 0)
             return dists;
-
+        std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)> dist_func = [&](const lingdist::StrVec &cells1, const lingdist::StrVec &cells2)
+        { return wjd_form(cells1, cells2, cate_level_weights); };
         for (size_t icol = 0; icol < row1.size(); icol++)
         {
             const auto &cells1 = row1[icol];
             const auto &cells2 = row2[icol];
-            size_t nforms1 = cells1.size(), nforms2 = cells2.size();
-            if (nforms1 != 0 && nforms2 != 0)
-            {
-                double this_dist = 0.0, sum_weights = 0.0;
-                size_t max_len = std::max(nforms1, nforms2);
-                if (max_len > multi_form_weights.size())
-                {
-                    Rcpp::stop("Number of forms exceeds length of multi_form_weights.");
-                    return dists;
-                }
-                for (size_t i = 0; i < max_len; i++)
-                {
-                    const auto &form1 = i < nforms1 ? cells1[i] : cells1.back();
-                    const auto &form2 = i < nforms2 ? cells2[i] : cells2.back();
-                    this_dist += wjd_form(form1, form2, cate_level_weights) * multi_form_weights[i];
-                    // only the first max_len weights are counted
-                    sum_weights += multi_form_weights[i];
-                }
-                if (sum_weights > 0.0)
-                {
-                    this_dist /= sum_weights;
-                }
-                else
-                {
-                    Rcpp::stop("Sum of multi_form_weights should be greater than 0.");
-                    return dists;
-                }
-                dists[icol] = this_dist;
-            }
+            dists[icol] = dispatcher_weighting(cells1, cells2, dist_func, multi_form_weights);
         }
         return dists;
     }
@@ -87,25 +61,14 @@ namespace
                    const std::vector<double> &multi_form_weights)
     {
         std::vector<double> dists = wjd_row_vec(row1, row2, cate_level_weights, multi_form_weights);
-        double sum_dist = 0.0, nitems = 0.0;
-        for (auto &dist : dists)
-        {
-            if (!Rcpp::NumericVector::is_na(dist))
-            {
-                sum_dist += dist;
-                nitems += 1.0;
-            }
-        }
-        if (nitems <= 0.0)
-            return NA_REAL;
-        return sum_dist / nitems;
+        return lingdist::nan_mean(dists);
     }
 }
 
 namespace lingdist
 {
     DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
-                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool detailed, bool squareform, bool parallel, int n_threads, bool quiet)
+                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool detailed, bool squareform, int n_threads, bool quiet)
     {
 
         auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim);
@@ -129,6 +92,8 @@ namespace lingdist
                 if (bar)
                     (*bar)++;
             };
+            RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
+            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
         }
         else
         {
@@ -139,21 +104,7 @@ namespace lingdist
                 if (bar)
                     (*bar)++;
             };
-        }
-        if (parallel)
-        {
             RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-        }
-        else
-        {
-            lingdist::singleFor(0, n_row_pairs, loop_body);
-        }
-        if (detailed)
-        {
-            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
-        }
-        else
-        {
             return gen_dist_df(dists, lab1Col, lab2Col, squareform, true);
         }
     }

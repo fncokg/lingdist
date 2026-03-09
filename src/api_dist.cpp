@@ -95,7 +95,7 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, bool parallel = false, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
     lingdist::CostTable cost;
     if (cost_mat.isNotNull())
@@ -108,7 +108,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, symmetric, parallel, n_threads, check_missing_cost, quiet);
+    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, symmetric, n_threads, check_missing_cost, quiet);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
@@ -137,9 +137,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, bool parallel = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, parallel, n_threads, max_epochs, tol, alignment_max_paths, quiet);
+    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, quiet);
 }
 
 //' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -154,7 +154,6 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed 
 //' @param cate_delim The delimiter separating different levels of categories within a word form. Default is "_".
 //' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (lexical items) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across lexical items.
 //' @param squareform Whether to return a dataframe in squareform.
-//' @param parallel Whether to parallelize the computation.
 //' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
 //' @param quiet Whether to suppress all output messages.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
@@ -162,10 +161,10 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed 
 //' df <- as.data.frame(rbind(a=c("A_1#B_2","C_3"),b=c("A_1","C_3_x")))
 //' result <- pw_wjd(df, form_delim="#", cate_delim="_")
 //[[Rcpp::export]]
-DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool detailed = false, bool squareform = false, bool parallel = false, int n_threads = 2, bool quiet = false)
+DataFrame pw_wjd(const DataFrame &data, Nullable<NumericVector> cate_level_weights = R_NilValue, Nullable<NumericVector> multi_form_weights = R_NilValue, const String &form_delim = "#", const String &cate_delim = "_", bool detailed = false, bool squareform = false, int n_threads = 2, bool quiet = false)
 {
     std::vector<double> cate_weights, form_weights;
     cate_weights = cate_level_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_level_weights)) : make_default_weights(10);
     form_weights = multi_form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(multi_form_weights)) : make_default_weights(10);
-    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, detailed, squareform, parallel, n_threads, quiet);
+    return lingdist::wjd_df(data, cate_weights, form_weights, form_delim, cate_delim, detailed, squareform, n_threads, quiet);
 }
