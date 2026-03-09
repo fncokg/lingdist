@@ -13,34 +13,14 @@
 #include "dp.hpp"
 #include "alignment.hpp"
 #include "dist.hpp"
+#include "dispatcher.hpp"
 
 using namespace Rcpp;
-
-namespace
-{
-
-    std::vector<double> edit_dist_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, const String &normalize_method)
-    {
-        std::size_t ncols = row1.size();
-        std::vector<double> dists(ncols, NA_REAL);
-        for (std::size_t coli = 0; coli < ncols; coli++)
-        {
-            const auto &chars1 = row1[coli];
-            const auto &chars2 = row2[coli];
-            if (!chars1.empty() && !chars2.empty())
-            {
-                dists[coli] = lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method);
-            }
-        }
-        return dists;
-    }
-
-}
 
 namespace lingdist
 {
 
-    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool detailed, const String &normalize_method, bool squareform, bool symmetric, int n_threads, bool check_missing_cost, bool quiet)
+    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool detailed, const String &normalize_method, const String &form_strategy, const String &form_delim, std::vector<double> form_weights, bool squareform, bool symmetric, int n_threads, bool check_missing_cost, bool quiet)
     {
         if (normalize_method != "longest" && normalize_method != "none")
         {
@@ -61,7 +41,7 @@ namespace lingdist
                         missing_symbols_str.c_str());
             }
         }
-        auto rows_vector = lingdist::split_df(data, delim);
+        auto rows_vector = lingdist::split_df2(data, form_delim, delim, form_strategy == "off");
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, symmetric);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
@@ -69,34 +49,23 @@ namespace lingdist
         std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
             bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
-        std::function<void(std::int32_t)> loop_body;
+        std::vector<std::vector<double>> dists_vec(row_pairs.size());
 
-        if (detailed)
+        lingdist::DistFunc dist_func = [&](const lingdist::StrVec &chars1, const lingdist::StrVec &chars2)
+        { return lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method); };
+
+        lingdist::FormsDispatcher dispatcher = make_dispatcher(form_strategy, dist_func, form_weights);
+
+        std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
-            std::vector<std::vector<double>> dists_vec(row_pairs.size());
-            loop_body = [&](std::int32_t idx)
-            {
-                auto [rowi, rowj] = row_pairs[idx];
-                dists_vec[idx] = edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost, normalize_method);
-                if (bar)
-                    (*bar)++;
-            };
-            RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
-        }
-        else
-        {
-            std::vector<double> dists(row_pairs.size());
-            loop_body = [&](std::int32_t idx)
-            {
-                auto [rowi, rowj] = row_pairs[idx];
-                dists[idx] = lingdist::nan_mean(edit_dist_row(rows_vector[rowi], rows_vector[rowj], cost, normalize_method));
-                if (bar)
-                    (*bar)++;
-            };
-            RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-            return gen_dist_df(dists, lab1Col, lab2Col, squareform, symmetric);
-        }
+            auto [rowi, rowj] = row_pairs[idx];
+            dists_vec[idx] = dist_row_pair(rows_vector[rowi], rows_vector[rowj], dispatcher);
+            if (bar)
+                (*bar)++;
+        };
+        RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
+
+        return gen_dist_df(dists_vec, lab1Col, lab2Col, detailed, as<StrVec>(data.names()), squareform, symmetric);
     }
 
 }

@@ -308,7 +308,7 @@ namespace lingdist
             warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
         }
 
-        DataFrame result = edit_dist_df(data, cost, delim, detailed, normalize_method, squareform, false, n_threads, false, true);
+        DataFrame result = edit_dist_df(data, cost, delim, detailed, normalize_method, "off", "", std::vector<double>(), squareform, true, n_threads, true);
 
         report["result"] = result;
         report["cost"] = cost.to_dataframe();

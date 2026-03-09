@@ -34,34 +34,14 @@ namespace
         // ["A","2"] vs ["A","2","a"]
         return cate_level_weights[min_len - 1];
     }
-
-    std::vector<double> wjd_row(const std::vector<std::vector<lingdist::StrVec>> &row1,
-                                const std::vector<std::vector<lingdist::StrVec>> &row2,
-                                const std::vector<double> &cate_level_weights,
-                                const std::vector<double> &multi_form_weights)
-    {
-        std::vector<double> dists(row1.size(), NA_REAL);
-        if (row1.size() != row2.size() || row1.size() == 0)
-            return dists;
-        std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)> dist_func = [&](const lingdist::StrVec &cells1, const lingdist::StrVec &cells2)
-        { return wjd_form(cells1, cells2, cate_level_weights); };
-        for (size_t icol = 0; icol < row1.size(); icol++)
-        {
-            const auto &cells1 = row1[icol];
-            const auto &cells2 = row2[icol];
-            dists[icol] = dispatcher_weighting(cells1, cells2, dist_func, multi_form_weights);
-        }
-        return dists;
-    }
 }
 
 namespace lingdist
 {
-    DataFrame wjd_df(const DataFrame &data, const std::vector<double> &cate_level_weights,
-                     const std::vector<double> &multi_form_weights, const String &form_delim, const String &cate_delim, bool detailed, bool squareform, int n_threads, bool quiet)
+    DataFrame wjd_df(const DataFrame &data, const String &cate_delim, const std::vector<double> &cate_weights, const String &form_strategy, const String &form_delim, const std::vector<double> &form_weights, bool detailed, bool squareform, int n_threads, bool quiet)
     {
 
-        auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim);
+        auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim, form_strategy == "off");
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, true);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
@@ -70,32 +50,23 @@ namespace lingdist
         std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
             bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
-        std::function<void(std::int32_t)> loop_body;
-        std::vector<double> dists(row_pairs.size());
+
         std::vector<std::vector<double>> dists_vec(row_pairs.size());
-        if (detailed)
+
+        lingdist::DistFunc dist_func = [&](const lingdist::StrVec &chars1, const lingdist::StrVec &chars2)
+        { return wjd_form(chars1, chars2, cate_weights); };
+
+        lingdist::FormsDispatcher dispatcher = make_dispatcher(form_strategy, dist_func, form_weights);
+
+        std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {
-            loop_body = [&](std::int32_t idx)
-            {
-                auto [rowi, rowj] = row_pairs[idx];
-                dists_vec[idx] = wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights);
-                if (bar)
-                    (*bar)++;
-            };
-            RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-            return gen_dist_df_detailed(dists_vec, lab1Col, lab2Col, as<StrVec>(data.names()));
-        }
-        else
-        {
-            loop_body = [&](std::int32_t idx)
-            {
-                auto [rowi, rowj] = row_pairs[idx];
-                dists[idx] = lingdist::nan_mean(wjd_row(rows_vector[rowi], rows_vector[rowj], cate_level_weights, multi_form_weights));
-                if (bar)
-                    (*bar)++;
-            };
-            RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-            return gen_dist_df(dists, lab1Col, lab2Col, squareform, true);
-        }
+            auto [rowi, rowj] = row_pairs[idx];
+            dists_vec[idx] = dist_row_pair(rows_vector[rowi], rows_vector[rowj], dispatcher);
+            if (bar)
+                (*bar)++;
+        };
+        RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
+
+        return gen_dist_df(dists_vec, lab1Col, lab2Col, detailed, as<StrVec>(data.names()), squareform, true);
     }
 }
