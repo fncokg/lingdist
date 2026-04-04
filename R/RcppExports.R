@@ -45,12 +45,13 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
+#' df2 <- as.data.frame(rbind(a=c("ph_l_i_z#b_l_i_s","k_o_l"),b=c("b_l_i_s", "k_a:_l#k_o")))
 #' cost.mat <- data.frame()
 #' result <- pw_edit_dist(df, delim="_")
 #' result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 #' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-#' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
+#' result <- pw_edit_dist(df2, cost_mat=cost.mat, delim="_", form_strategy="weighting", form_delim="#", form_weights=c(0.7, 0.3))
 pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, normalize_method = "longest", form_strategy = "off", form_delim = "#", form_weights = NULL, squareform = FALSE, symmetric = TRUE, n_threads = 2L, check_missing_cost = TRUE, default_sub_cost = 1.0, default_ins_del_cost = 1.0, quiet = FALSE) {
     .Call(`_lingdist_pw_edit_dist`, data, cost_mat, delim, detailed, normalize_method, form_strategy, form_delim, form_weights, squareform, symmetric, n_threads, check_missing_cost, default_sub_cost, default_ins_del_cost, quiet)
 }

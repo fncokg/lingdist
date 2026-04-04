@@ -40,13 +40,11 @@ namespace lingdist
 {
     DataFrame wjd_df(const DataFrame &data, const String &cate_delim, const std::vector<double> &cate_weights, const String &form_strategy, const String &form_delim, const std::vector<double> &form_weights, bool detailed, bool squareform, int n_threads, bool quiet)
     {
-
         auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim, form_strategy == "off");
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, true);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
 
-        // RcppThread::ProgressBar *bar = nullptr;
         std::unique_ptr<lingdist::SafeProgressBar> bar;
         if (!quiet)
             bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
