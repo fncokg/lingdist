@@ -99,21 +99,27 @@ namespace lingdist
     std::tuple<StringVector, StringVector, std::vector<std::pair<int, int>>> get_row_pairs(const DataFrame &data, bool symmetric)
     {
         int nrows = data.nrow();
+        int npairs = symmetric ? nrows * (nrows - 1) / 2 : nrows * nrows;
         CharacterVector rownames = data.attr("row.names");
-        StringVector lab1Col, lab2Col;
+        StringVector lab1Col(npairs), lab2Col(npairs);
 
-        std::vector<std::pair<int, int>> row_pairs;
+        std::vector<std::pair<int, int>> row_pairs(npairs);
         int outer_loop_end = symmetric ? nrows - 1 : nrows;
+
+        int pair_idx = 0;
+
         for (int rowi = 0; rowi < outer_loop_end; rowi++)
         {
             int inner_loop_start = symmetric ? rowi + 1 : 0;
-            for (int rowj = inner_loop_start; rowj < nrows; rowj++)
+            String label1 = rownames[rowi];
+            for (int rowj = inner_loop_start; rowj < nrows; rowj++, pair_idx++)
             {
-                String label1 = rownames[rowi];
+
                 String label2 = rownames[rowj];
-                row_pairs.emplace_back(rowi, rowj);
-                lab1Col.push_back(label1);
-                lab2Col.push_back(label2);
+                // row_pairs.emplace_back(rowi, rowj);
+                row_pairs[pair_idx] = std::make_pair(rowi, rowj);
+                lab1Col[pair_idx] = label1;
+                lab2Col[pair_idx] = label2;
             }
         }
         return std::make_tuple(lab1Col, lab2Col, row_pairs);
