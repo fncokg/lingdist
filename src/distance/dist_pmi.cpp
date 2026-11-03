@@ -24,18 +24,13 @@ namespace
         }
     }
 
-    struct PMIRowResult
-    {
-        std::vector<std::pair<std::string, std::string>> char_pairs;
-        std::vector<double> dist;
-    };
+    using PMIRowResult = std::vector<lingdist::AlignmentResult>;
 
     // Two chars are unordered, i.e. (c1,c2) == (c2,c1).
     // This is because in the alignment, replacement of c1 with c2 is equivalent to replacement of c2 with c1, since we randomly choose one as source and the other as target.
     struct AlignmentCount
     {
-        // We DO allow diagonal storage here but currently,
-        // but, we DONOT consider identical character pairs in PMI calculation
+        // We DO allow diagonal storage here but currently, we DONOT consider identical character pairs in PMI calculation
         lingdist::StrVec syms;
         size_t nsyms;
         std::vector<double> pair_counts;
@@ -104,35 +99,32 @@ namespace
         }
     };
 
-    void update_cost_table(const std::vector<lingdist::AlignmentResult> &results, lingdist::CostTable &cost, AlignmentCount &alignment_count)
+    void update_cost_table(const std::vector<PMIRowResult> &results, lingdist::CostTable &cost, AlignmentCount &alignment_count)
     {
         alignment_count.clear();
         // we do not clear cost, since all its entries will be updated anyway
-        // double total_count = 0.0;
-        double eff_val;
-
         for (const auto &res : results)
         {
-            for (const auto &path : res.alignments)
+            for (const auto &word : res)
             {
-                if (path.empty())
+                if (word.alignments.empty())
                     continue;
-                // This is not mentioned in Wieling(2012), but seems necessary:
-                // If we find multiple optimal paths, we must make sure that pairs in each path only contribute fractionally,
-                // so that this alignment contributes only 1.0 to the all counts.
-                eff_val = 1.0 / static_cast<double>(path.size());
-                for (const auto &char_pair : path)
+                // Average counts over this word pair's K retained optimal paths:
+                // every occurrence of a non-identical character pair adds 1/K to its joint count and to both symbol marginals.
+                // K is the number actually returned (possibly capped by alignment_max_paths).
+                const double path_weight = 1.0 / static_cast<double>(word.alignments.size());
+                for (const auto &path : word.alignments)
                 {
-
-                    const std::string &c1 = char_pair.first;
-                    const std::string &c2 = char_pair.second;
-                    // We now only consider non-identical character pairs
-                    if (c1 != c2)
+                    for (const auto &char_pair : path)
                     {
-                        alignment_count.add_pair(c1, c2, eff_val);
-                        alignment_count.add_sym(c1, eff_val);
-                        alignment_count.add_sym(c2, eff_val);
-                        // total_count += eff_val;
+                        const std::string &c1 = char_pair.first;
+                        const std::string &c2 = char_pair.second;
+                        if (c1 != c2)
+                        {
+                            alignment_count.add_pair(c1, c2, path_weight);
+                            alignment_count.add_sym(c1, path_weight);
+                            alignment_count.add_sym(c2, path_weight);
+                        }
                     }
                 }
             }
@@ -209,28 +201,25 @@ namespace
         }
     }
 
-    lingdist::AlignmentResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3)
+    PMIRowResult pmi_row(const std::vector<lingdist::StrVec> &row1, const std::vector<lingdist::StrVec> &row2, const lingdist::CostTable &cost, int alignment_max_paths = 3)
     {
-        lingdist::AlignmentResult result;
+        PMIRowResult result;
         std::size_t ncols = row1.size();
-        double sum_dist = 0.0, nwords = 0.0;
-        lingdist::AlignmentResult this_res;
+        result.reserve(ncols);
         for (std::size_t coli = 0; coli < ncols; coli++)
         {
             const auto &chars1 = row1[coli];
             const auto &chars2 = row2[coli];
             if (!chars1.empty() && !chars2.empty())
             {
-                // we do not normalize distance here since we only care about alignments here. The distance calculated here is never used. the final distance is calculated in the end with the converged cost table, and the normalization is done in that step.
-                this_res = lingdist::get_string_alignment_result(chars1, chars2, cost, alignment_max_paths, "none");
-                sum_dist += this_res.distance;
-                nwords += 1.0;
-                result.alignments.insert(result.alignments.end(),
-                                         this_res.alignments.begin(),
-                                         this_res.alignments.end());
+                // Training uses only alignments; final distances are recomputed
+                // with the learned costs and the requested normalization later.
+                // Do not flatten paths across words: that loses the denominator
+                // needed to average each word pair's counts independently.
+                result.push_back(lingdist::get_string_alignment_result(
+                    chars1, chars2, cost, alignment_max_paths, "none"));
             }
         }
-        result.distance = nwords > 0 ? sum_dist / nwords : NA_REAL;
         return result;
     }
 }
@@ -239,7 +228,6 @@ namespace lingdist
 {
     List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method, bool squareform, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
-        // Reject zero iterations instead of reporting untrained costs as converged (B08).
         if (max_epochs < 1)
             stop("max_epochs must be at least 1.");
         if (!std::isfinite(tol) || tol <= 0.0)
@@ -270,7 +258,7 @@ namespace lingdist
             Rprintf("Using %d threads for (parallel) computation.\n", n_threads);
         }
         double sum_diff = 0.0, mean_diff = 0.0;
-        std::vector<lingdist::AlignmentResult> results(n_row_pairs);
+        std::vector<PMIRowResult> results(n_row_pairs);
         int n_epochs = 0;
         bool converged = false;
         for (int iepoch = 1; iepoch <= max_epochs; iepoch++)
