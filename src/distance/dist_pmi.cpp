@@ -239,6 +239,13 @@ namespace lingdist
 {
     List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method, bool squareform, int n_threads, int max_epochs, double tol, int alignment_max_paths, bool quiet)
     {
+        // Reject zero iterations instead of reporting untrained costs as converged (B08).
+        if (max_epochs < 1)
+            stop("max_epochs must be at least 1.");
+        if (!std::isfinite(tol) || tol <= 0.0)
+            stop("tol must be finite and positive.");
+        if (alignment_max_paths < 1)
+            stop("alignment_max_paths must be at least 1.");
         if (!quiet)
             Rprintf("Starting PMI distance computation on data frame with %d rows...\n", (int)data.nrow());
 
@@ -264,8 +271,9 @@ namespace lingdist
         }
         double sum_diff = 0.0, mean_diff = 0.0;
         std::vector<lingdist::AlignmentResult> results(n_row_pairs);
-        int iepoch;
-        for (iepoch = 1; iepoch <= max_epochs; iepoch++)
+        int n_epochs = 0;
+        bool converged = false;
+        for (int iepoch = 1; iepoch <= max_epochs; iepoch++)
         {
             if (!quiet)
                 Rprintf("Epoch %d/%d\n", iepoch, max_epochs);
@@ -293,17 +301,21 @@ namespace lingdist
             {
                 sum_diff += std::fabs(cost.data[idx] - prev_cost.data[idx]);
             }
-            mean_diff = sum_diff / (static_cast<double>(cost.data.size()) - static_cast<double>(unique_chars.size())); // exclude diagonal entries
+            n_epochs = iepoch;
+            // exclude diagonal entries
+            const size_t n_off_diagonal = cost.data.size() - unique_chars.size();
+            mean_diff = n_off_diagonal ? sum_diff / n_off_diagonal : 0.0;
             if (!quiet)
                 Rprintf("Cost table updated, mean absolute difference: %.6f, total absolute difference: %.6f\n", mean_diff, sum_diff);
             if (mean_diff < tol)
             {
+                converged = true;
                 if (!quiet)
                     Rprintf("Convergence reached with mean difference %.6f < tol %.6f. Stopping iterations.\n", mean_diff, tol);
                 break;
             }
         }
-        if (mean_diff >= tol)
+        if (!converged)
         {
             warning("PMI distance computation did not converge within the maximum number of epochs. Try increasing max_epochs or tol.");
         }
@@ -314,8 +326,8 @@ namespace lingdist
         report["cost"] = cost.to_dataframe();
         report["sum_diff"] = sum_diff;
         report["mean_diff"] = mean_diff;
-        report["converged"] = mean_diff < tol;
-        report["n_epochs"] = iepoch;
+        report["converged"] = converged;
+        report["n_epochs"] = n_epochs;
         if (!quiet)
             Rprintf("PMI distance computation completed.\n");
         return report;
