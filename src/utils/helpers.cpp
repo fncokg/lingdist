@@ -41,6 +41,9 @@ namespace lingdist
     // TODO: This is heavy, optimize later
     StrVec split(const String &target, const String &delim)
     {
+        // Preserve missingness before converting R strings to std::string.
+        if (target == NA_STRING || target == "")
+            return {};
         Function r_split("strsplit");
         List res = r_split(target, delim);
         return res[0];
@@ -57,7 +60,7 @@ namespace lingdist
             row_vector.reserve(ncols);
             for (int j = 0; j < ncols; j++)
             {
-                const StrVec &col = data[j];
+                const CharacterVector col = data[j];
                 row_vector.push_back(split(col[i], delim));
             }
             rows_vector.push_back(std::move(row_vector));
@@ -76,17 +79,22 @@ namespace lingdist
             row_vector.reserve(ncols);
             for (int j = 0; j < ncols; j++)
             {
-                const StrVec &col = data[j];
+                const CharacterVector col = data[j];
                 std::vector<StrVec> cell_vector;
                 if (ignore_delim1)
                 {
-                    cell_vector.push_back(split(col[i], delim2));
+                    auto tokens = split(col[i], delim2);
+                    // For empty cells, we keep `cell_vector` empty, instead of adding an empty `StrVec`, because we check `cell_vector.empty()` later to determine whether to compute distance for this cell.
+                    if (!tokens.empty())
+                        cell_vector.push_back(std::move(tokens));
                 }
                 else
                 {
                     for (auto &part : split(col[i], delim1))
                     {
-                        cell_vector.push_back(split(part, delim2));
+                        auto tokens = split(part, delim2);
+                        if (!tokens.empty())
+                            cell_vector.push_back(std::move(tokens));
                     }
                 }
                 row_vector.push_back(std::move(cell_vector));
