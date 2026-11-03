@@ -94,7 +94,8 @@ namespace lingdist
             for (auto &sym2 : syms)
             {
                 double value = (sym1 == sym2) ? 0.0 : sub_cost;
-                if (sym1 == lingdist::EMPTY || sym2 == lingdist::EMPTY)
+                // PMI sums all costs up, so we need to ensure that the cost of empty->empty is zero.
+                if (sym1 != sym2 && (sym1 == lingdist::EMPTY || sym2 == lingdist::EMPTY))
                 {
                     value = ins_del_cost;
                 }
