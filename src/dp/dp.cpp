@@ -21,10 +21,12 @@ namespace lingdist
         at(0, 0) = 0.0;
         for (std::size_t j = 1; j < ncol; j++)
         {
-            at(0, j) = at(0, j - 1) + cost.get_cost(EMPTY, vec1[j - 1]);
+            // delete the first j symbols of vec1 to match an empty vec2
+            at(0, j) = at(0, j - 1) + cost.get_cost(vec1[j - 1], EMPTY);
         }
         for (std::size_t i = 1; i < nrow; i++)
         {
+            // insert the first i symbols of vec2 to match an empty vec1
             at(i, 0) = at(i - 1, 0) + cost.get_cost(EMPTY, vec2[i - 1]);
         }
 
@@ -58,7 +60,7 @@ namespace lingdist
         for (std::size_t j = 1; j < ncol; j++)
         {
             dist[0][j] = std::make_pair(
-                dist[0][j - 1].first + cost.get_cost(EMPTY, vec1[j - 1]),
+                dist[0][j - 1].first + cost.get_cost(vec1[j - 1], EMPTY),
                 Points({std::make_pair(0, static_cast<int>(j - 1))}));
         }
         for (std::size_t i = 1; i < nrow; i++)
