@@ -60,7 +60,7 @@ namespace lingdist
             for (auto &sym2 : table.syms)
             {
                 int r_id = rindexer[sym2];
-                table.set_cost(sym1, sym2, this_col[r_id]);
+                table.set_cost(sym2, sym1, this_col[r_id]);
             }
         }
         return table;
@@ -171,7 +171,8 @@ namespace lingdist
                 NumericVector this_col(nsyms);
                 for (int r = 0; r < nsyms; ++r)
                 {
-                    this_col[r] = at_by_index(c, r);
+                    // Export with the same source-row / target-column convention.
+                    this_col[r] = at_by_index(r, c);
                 }
                 df.push_back(this_col);
             }
