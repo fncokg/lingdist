@@ -10,7 +10,7 @@ using namespace Rcpp;
 namespace lingdist
 {
 
-    // 高性能成本表：列名/行名分别映射到索引，数据按列主序或行主序存放（此处采用 col-major: idx = r * ncol + c）
+    // All accessors take (source, target); storage index = target * nsyms + source.
     struct CostTable
     {
         // A table structure
@@ -34,20 +34,20 @@ namespace lingdist
         {
             return sym_index.find(cname) != sym_index.end() && sym_index.find(rname) != sym_index.end();
         }
-        inline size_t get_index(int c, int r) const
+        inline size_t get_index(int source, int target) const
         {
-            return static_cast<size_t>(r) * static_cast<size_t>(nsyms) + static_cast<size_t>(c);
+            return static_cast<size_t>(target) * static_cast<size_t>(nsyms) + static_cast<size_t>(source);
         }
 
-        inline double at_by_index(int c, int r) const
+        inline double at_by_index(int source, int target) const
         {
-            return data[get_index(c, r)];
+            return data[get_index(source, target)];
         }
 
         lingdist::StrVec check_missing_symbols(const DataFrame &data, const String &delim) const;
     };
 
-    // 从 DataFrame 构建 CostTable（允许列名与行名集合不同）
+    // Build a cost table from a DataFrame with matching row/column symbol sets.
     CostTable build_cost_table(const Rcpp::DataFrame &cost_mat);
 
     CostTable build_fast_cost_table(const lingdist::StrVec &syms, double sub_cost = 1.0, double ins_del_cost = 1.0);
