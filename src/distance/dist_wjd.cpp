@@ -13,15 +13,11 @@ namespace
                     const lingdist::StrVec &form2,
                     const std::vector<double> &cate_level_weights)
     {
+        // We donot need to check the lengths of cate_level_weights here because the main thread has already validated this.
         size_t len1 = form1.size(), len2 = form2.size();
         if (len1 == 0 || len2 == 0)
             return 0.0;
         size_t min_len = std::min(len1, len2);
-        if (min_len > cate_level_weights.size())
-        {
-            Rcpp::stop("Number of categories exceeds length of cate_level_weights.");
-            return NA_REAL;
-        }
         for (size_t i = 0; i < min_len; i++)
         {
             if (form1[i] != form2[i])
@@ -41,6 +37,10 @@ namespace lingdist
     DataFrame wjd_df(const DataFrame &data, const String &cate_delim, const std::vector<double> &cate_weights, const String &form_strategy, const String &form_delim, const std::vector<double> &form_weights, bool detailed, bool squareform, int n_threads, bool quiet)
     {
         auto rows_vector = lingdist::split_df2(data, form_delim, cate_delim, form_strategy == "off");
+        auto checked_cate_weights = prepare_weights(rows_vector, cate_weights, true, "cate_weights");
+        auto checked_form_weights = form_strategy == "weighting"
+                                        ? prepare_weights(rows_vector, form_weights, false, "form_weights")
+                                        : form_weights;
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, true);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());
@@ -52,9 +52,9 @@ namespace lingdist
         std::vector<std::vector<double>> dists_vec(row_pairs.size());
 
         lingdist::DistFunc dist_func = [&](const lingdist::StrVec &chars1, const lingdist::StrVec &chars2)
-        { return wjd_form(chars1, chars2, cate_weights); };
+        { return wjd_form(chars1, chars2, checked_cate_weights); };
 
-        lingdist::FormsDispatcher dispatcher = make_dispatcher(form_strategy, dist_func, form_weights);
+        lingdist::FormsDispatcher dispatcher = make_dispatcher(form_strategy, dist_func, checked_form_weights);
 
         std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
         {

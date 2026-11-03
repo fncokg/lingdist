@@ -68,6 +68,10 @@ namespace lingdist
     // Generate distance DataFrame from distance vectors and labels
     DataFrame gen_dist_df(std::vector<std::vector<double>> dists_vec, const StringVector &lab1Col, const StringVector &lab2Col, bool detailed, const lingdist::StrVec &col_names, bool squareform, bool symmetric);
 
+    // Validate/generate weights before dispatching work to parallel threads.
+    std::vector<double> prepare_weights(const std::vector<std::vector<std::vector<StrVec>>> &rows,
+                                        std::vector<double> weights, bool categories, const char *name);
+
     // --- Vector Utils ---
     double nan_mean(const std::vector<double> &vec);
 

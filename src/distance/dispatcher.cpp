@@ -11,6 +11,7 @@ double dispatcher_weighting(const std::vector<lingdist::StrVec> &forms1, const s
         {
             const auto &form1 = i < nforms1 ? forms1[i] : forms1.back();
             const auto &form2 = i < nforms2 ? forms2[i] : forms2.back();
+            // Weight lengths have been validated against all cells before parallel dispatch.
             sum_dist += dist_func(form1, form2) * weights[i];
             sum_weights += weights[i];
         }

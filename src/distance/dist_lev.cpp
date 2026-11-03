@@ -42,6 +42,8 @@ namespace lingdist
             }
         }
         auto rows_vector = lingdist::split_df2(data, form_delim, delim, form_strategy == "off");
+        if (form_strategy == "weighting")
+            form_weights = prepare_weights(rows_vector, std::move(form_weights), false, "form_weights");
         auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, symmetric);
 
         int n_row_pairs = static_cast<int>(row_pairs.size());

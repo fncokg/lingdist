@@ -8,14 +8,15 @@ using namespace Rcpp;
 
 namespace
 {
-    inline std::vector<double> make_default_weights(int n)
+    std::vector<double> read_weights(Nullable<NumericVector> weights, const char *name)
     {
-        std::vector<double> weights;
-        for (int i = 0; i < n; ++i)
-        {
-            weights.push_back(std::pow(0.5, i));
-        }
-        return weights;
+        // NULL requests adaptive defaults; an explicitly empty vector is invalid (B01/B02).
+        if (weights.isNull())
+            return {};
+        auto values = as<std::vector<double>>(NumericVector(weights));
+        if (values.empty())
+            stop("%s must not be empty; use NULL for default weights.", name);
+        return values;
     }
 }
 
@@ -109,7 +110,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
         lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
         cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
     }
-    std::vector<double> form_weights_vec = form_weights.isNotNull() ? as<std::vector<double>>(form_weights) : make_default_weights(10);
+    std::vector<double> form_weights_vec = read_weights(form_weights, "form_weights");
     return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, form_strategy, form_delim, form_weights_vec, squareform, symmetric, n_threads, check_missing_cost, quiet);
 }
 
@@ -165,7 +166,7 @@ List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed 
 //[[Rcpp::export]]
 DataFrame pw_wjd(const DataFrame &data, const String &cate_delim = "_", Nullable<NumericVector> cate_weights = R_NilValue, const String &form_strategy = "weighting", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool detailed = false, bool squareform = false, int n_threads = 2, bool quiet = false)
 {
-    std::vector<double> cate_weights_vec = cate_weights.isNotNull() ? as<std::vector<double>>(NumericVector(cate_weights)) : make_default_weights(10);
-    std::vector<double> form_weights_vec = form_weights.isNotNull() ? as<std::vector<double>>(NumericVector(form_weights)) : make_default_weights(10);
+    std::vector<double> cate_weights_vec = read_weights(cate_weights, "cate_weights");
+    std::vector<double> form_weights_vec = read_weights(form_weights, "form_weights");
     return lingdist::wjd_df(data, cate_delim, cate_weights_vec, form_strategy, form_delim, form_weights_vec, detailed, squareform, n_threads, quiet);
 }

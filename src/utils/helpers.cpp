@@ -240,6 +240,38 @@ namespace lingdist
         return result;
     }
 
+    std::vector<double> prepare_weights(const std::vector<std::vector<std::vector<StrVec>>> &rows,
+                                        std::vector<double> weights, bool categories, const char *name)
+    {
+        size_t required = 0;
+        for (const auto &row : rows)
+            for (const auto &cell : row)
+            {
+                if (categories)
+                {
+                    for (const auto &form : cell)
+                        required = std::max(required, form.size());
+                }
+                else
+                    required = std::max(required, cell.size());
+            }
+
+        // Generate enough defaults for the data, instead of a fixed ten entries (B01/B02).
+        if (weights.empty())
+        {
+            weights.resize(required);
+            for (size_t i = 0; i < required; ++i)
+                weights[i] = std::pow(0.5, static_cast<double>(i));
+        }
+        // Validate on the main thread: workers must never index past the supplied weights.
+        if (weights.size() < required)
+            stop("%s must cover all %s in the data.", name, categories ? "category levels" : "word forms");
+        for (double weight : weights)
+            if (!std::isfinite(weight) || weight < 0.0)
+                stop("%s must contain only finite, non-negative values.", name);
+        return weights;
+    }
+
     double nan_mean(const std::vector<double> &vec)
     {
         double sum = 0.0;
