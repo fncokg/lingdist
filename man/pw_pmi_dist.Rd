@@ -10,7 +10,6 @@ pw_pmi_dist(
   detailed = FALSE,
   normalize_method = "longest",
   squareform = FALSE,
-  parallel = FALSE,
   n_threads = 4L,
   max_epochs = 20L,
   tol = 1e-04,
@@ -23,30 +22,30 @@ pw_pmi_dist(
 
 \item{delim}{The delimiter separating atomic symbols.}
 
-\item{detailed}{Whether to return detailed information.}
+\item{detailed}{Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.}
 
-\item{normalize_method}{Method to normalize the distance. Default is "longest".}
+\item{normalize_method}{Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.}
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 
-\item{parallel}{Whether to parallelize the computation.}
+\item{n_threads}{Number of threads used for computation. Use 1 for sequential computation.}
 
-\item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
+\item{max_epochs}{Maximum number of epochs; must be at least 1.}
 
-\item{max_epochs}{Maximum number of epochs.}
+\item{tol}{Finite positive tolerance for convergence.}
 
-\item{tol}{Tolerance for convergence.}
-
-\item{alignment_max_paths}{Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.}
+\item{alignment_max_paths}{Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.}
 
 \item{quiet}{Whether to suppress all output messages.}
 }
 \value{
 A list containing the following components:
 \item{result}{A dataframe of distances, either in long table form or square form.}
-\item{cost}{The final cost matrix used for distance calculation. Note: this is NOT the cost matrix after the last iteration, but the one before that, which is used to compute the final distances. That is, when you finished the iteration after 10 epochs, the cost matrix used to compute distances is actually the one being updated after the 9th epoch.}
+\item{cost}{The final cost matrix used for distance calculation.}
 \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
+\item{converged}{Whether a completed cost update met the convergence tolerance.}
+\item{n_epochs}{Number of cost updates actually completed.}
 }
 \description{
 Compute PMI (Pointwise Mutual Information) distance between all row pairs of a dataframe.
@@ -55,5 +54,5 @@ Compute PMI (Pointwise Mutual Information) distance between all row pairs of a d
 df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 result <- pw_pmi_dist(df, delim="_")
 result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
-result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
+result <- pw_pmi_dist(df, delim="_", n_threads=4)
 }

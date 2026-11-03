@@ -10,9 +10,11 @@ pw_edit_dist(
   delim = "",
   detailed = FALSE,
   normalize_method = "longest",
+  form_strategy = "off",
+  form_delim = "#",
+  form_weights = NULL,
   squareform = FALSE,
   symmetric = TRUE,
-  parallel = FALSE,
   n_threads = 2L,
   check_missing_cost = TRUE,
   default_sub_cost = 1,
@@ -27,17 +29,21 @@ pw_edit_dist(
 
 \item{delim}{The delimiter separating atomic symbols.}
 
-\item{detailed}{Whether to return detailed information.}
+\item{detailed}{Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.}
 
-\item{normalize_method}{Method to normalize the distance. Default is "longest".}
+\item{normalize_method}{Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.}
+
+\item{form_strategy}{How to combine word forms: off (default), weighting, mean_all, min_all, or first.}
+
+\item{form_delim}{The delimiter separating word forms when form_strategy is not off.}
+
+\item{form_weights}{Finite, non-negative weights covering all observed forms for weighting. NULL generates weights 1, 0.5, 0.25, ... to the required length. An all-zero effective weight sum returns NA.}
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 
 \item{symmetric}{Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.}
 
-\item{parallel}{Whether to parallelize the computation.}
-
-\item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
+\item{n_threads}{Number of threads used for computation. Use 1 for sequential computation.}
 
 \item{check_missing_cost}{Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.}
 
@@ -51,14 +57,15 @@ pw_edit_dist(
 A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 }
 \description{
-Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
+Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If a row pair has no jointly observed cells, its average distance is NA.
 }
 \examples{
 df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
+df2 <- as.data.frame(rbind(a=c("ph_l_i_z#b_l_i_s","k_o_l"),b=c("b_l_i_s", "k_a:_l#k_o")))
 cost.mat <- data.frame()
 result <- pw_edit_dist(df, delim="_")
 result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
-result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", parallel=TRUE, n_threads=4, check_missing_cost=FALSE)
+result <- pw_edit_dist(df2, cost_mat=cost.mat, delim="_", form_strategy="weighting", form_delim="#", form_weights=c(0.7, 0.3))
 }

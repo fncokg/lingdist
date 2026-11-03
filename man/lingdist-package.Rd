@@ -19,5 +19,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Chao Kong \email{kongchao1998@gmail.com} (\href{https://orcid.org/0000-0002-6404-6142}{ORCID})
 
+Authors:
+\itemize{
+  \item Chao Kong \email{kongchao1998@gmail.com} (\href{https://orcid.org/0000-0002-6404-6142}{ORCID})
+}
+
 }
 \keyword{internal}

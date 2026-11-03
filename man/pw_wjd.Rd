@@ -6,13 +6,13 @@
 \usage{
 pw_wjd(
   data,
-  cate_level_weights = NULL,
-  multi_form_weights = NULL,
-  form_delim = "#",
   cate_delim = "_",
+  cate_weights = NULL,
+  form_strategy = "weighting",
+  form_delim = "#",
+  form_weights = NULL,
   detailed = FALSE,
   squareform = FALSE,
-  parallel = FALSE,
   n_threads = 2L,
   quiet = FALSE
 )
@@ -20,21 +20,21 @@ pw_wjd(
 \arguments{
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
-\item{cate_level_weights}{Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". If not provided, default weights are used.}
+\item{cate_delim}{The delimiter separating different levels of categories within a word form. Default is "_".}
 
-\item{multi_form_weights}{Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. If not provided, default weights are used.}
+\item{cate_weights}{Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". Weights must be finite, non-negative, and cover all observed levels. NULL generates weights 1, 0.5, 0.25, ... to the required depth.}
+
+\item{form_strategy}{How to combine word forms: weighting, mean_all, min_all, first, or off.}
 
 \item{form_delim}{The delimiter separating different word forms of a single lexical item. Default is "#".}
 
-\item{cate_delim}{The delimiter separating different levels of categories within a word form. Default is "_".}
+\item{form_weights}{Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. Weights must be finite, non-negative, and cover all observed forms. NULL generates weights 1, 0.5, 0.25, ... to the required length.}
 
-\item{detailed}{Whether to return detailed information.}
+\item{detailed}{Whether to return detailed information. When FALSE (default), returns the average distance across all columns (lexical items) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across lexical items.}
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 
-\item{parallel}{Whether to parallelize the computation.}
-
-\item{n_threads}{The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.}
+\item{n_threads}{Number of threads used for computation. Use 1 for sequential computation.}
 
 \item{quiet}{Whether to suppress all output messages.}
 }

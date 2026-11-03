@@ -25,7 +25,7 @@ string_edit_dist(
 
 \item{delim}{The delimiter in `str1` and `str2` separating atomic symbols.}
 
-\item{normalize_method}{Method to normalize the distance. Default is "longest".}
+\item{normalize_method}{Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.}
 
 \item{return_alignments}{Whether to return alignment details}
 

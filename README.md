@@ -6,7 +6,9 @@
 
 In general:
 - **Fast Computation**: All algorithms as well as the parallel computation features and related tool functions are implemented in native `C++` leveraging the `Rcpp` package.
-- **Parallel Computation for Large Datasets**: When pairwise distance matrix is required for large datasets, the parallel computation feature can be enabled as easy as setting the `parallel` parameter to `TRUE`.
+- **Parallel Computation for Large Datasets**: When pairwise distance matrix is required for large datasets, set `n_threads` to the desired number of threads; use `n_threads = 1` for sequential computation.
+
+<!-- B06: examples use n_threads, matching the exported API. -->
 
 Supported Algorithms:
 - **Generalized Edit Distance**: Supports custom cost assignments, treating strings as single symbols (e.g., IPA transcriptions), and returning detailed alignment results.
@@ -57,7 +59,7 @@ And you want all pairwise distances between rows (i.e. albanian vs azerbaijani, 
 
 ```r
 # cost.mat is optional
-result <- pw_edit_dist(df, cost_mat = NULL, delim = "_", parallel = TRUE, n_threads = 4)
+result <- pw_edit_dist(df, cost_mat = NULL, delim = "_", n_threads = 4)
 ```
 
 In this call, parallel computation is enabled and 4 threads are used in the computation.
@@ -67,7 +69,7 @@ In this call, parallel computation is enabled and 4 threads are used in the comp
 To compute PMI distances which learn costs from the data:
 
 ```r
-result <- pw_pmi_dist(df, delim = "_", parallel = TRUE, n_threads = 4)
+result <- pw_pmi_dist(df, delim = "_", n_threads = 4)
 ```
 
 ## Pairwise Weighted Jaccard Distances
@@ -82,7 +84,7 @@ df_wjd <- as.data.frame(rbind(
 ))
 
 # Compute WJD
-result <- pw_wjd(df_wjd, form_delim = "#", cate_delim = "_", parallel = TRUE)
+result <- pw_wjd(df_wjd, form_delim = "#", cate_delim = "_", n_threads = 4)
 ```
 
 ## Utilities

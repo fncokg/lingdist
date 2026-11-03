@@ -27,7 +27,7 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 
 #' Compute edit distance between all row pairs of a dataframe
 #'
-#' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If all values in a row are not valid strings, all average distances involving this row is set to -1.
+#' Compute average edit distance between all row pairs of a dataframe, empty or NA cells are ignored. If a row pair has no jointly observed cells, its average distance is NA.
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
@@ -36,8 +36,10 @@ string_edit_dist <- function(str1, str2, cost_mat = NULL, delim = "", normalize_
 #' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param squareform Whether to return a dataframe in squareform.
 #' @param symmetric Whether the result matrix is symmetric. This depends on whether the `cost_mat` is symmetric.
-#' @param parallel Whether to parallelize the computation.
-#' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+#' @param n_threads Number of threads used for computation. Use 1 for sequential computation.
+#' @param form_strategy How to combine word forms: off (default), weighting, mean_all, min_all, or first.
+#' @param form_delim The delimiter separating word forms when form_strategy is not off.
+#' @param form_weights Finite, non-negative weights covering all observed forms for weighting. NULL generates weights 1, 0.5, 0.25, ... to the required length. An all-zero effective weight sum returns NA.
 #' @param check_missing_cost Whether to check if all symbols in `data` are defined in `cost_mat`. If TRUE, an warning message is printed when there are missing symbols. You are recommended to set this to `TRUE` unless you are sure all symbols are defined in `cost_mat` and you want to skip the check for performance consideration.
 #' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 #' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
@@ -65,22 +67,23 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.
 #' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param squareform Whether to return a dataframe in squareform.
-#' @param parallel Whether to parallelize the computation.
-#' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
-#' @param max_epochs Maximum number of epochs.
-#' @param tol Tolerance for convergence.
-#' @param alignment_max_paths Maximum number of paths to consider in alignment. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
+#' @param n_threads Number of threads used for computation. Use 1 for sequential computation.
+#' @param max_epochs Maximum number of epochs; must be at least 1.
+#' @param tol Finite positive tolerance for convergence.
+#' @param alignment_max_paths Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
 #' @param quiet Whether to suppress all output messages.
 #' @return A list containing the following components:
 #' \item{result}{A dataframe of distances, either in long table form or square form.}
 #' \item{cost}{The final cost matrix used for distance calculation.}
 #' \item{sum_diff}{The sum of absolute differences between the cost matrices of the last two iterations.}
 #' \item{mean_diff}{The mean of absolute differences between the cost matrices of the last two iterations.}
+#' \item{converged}{Whether a completed cost update met the convergence tolerance.}
+#' \item{n_epochs}{Number of cost updates actually completed.}
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
-#' result <- pw_pmi_dist(df, delim="_", parallel=TRUE, n_threads=4)
+#' result <- pw_pmi_dist(df, delim="_", n_threads=4)
 pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
     .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, quiet)
 }
@@ -91,13 +94,14 @@ pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "
 #' For example, a cell value "A_2_a#A_3#B_5_c" indicates there are 3 word forms for this lexical item. The first form "A_2_a" belongs to category A, subcategory 2, and sub-subcategory a. The second form "A_3" belongs to category A and subcategory 3. The third form "B_5_c" belongs to category B, subcategory 5, and sub-subcategory c. The delimiters can be customized via `form_delim` and `cate_delim`.
 #'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
-#' @param cate_level_weights Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". If not provided, default weights are used.
-#' @param multi_form_weights Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. If not provided, default weights are used.
+#' @param cate_weights Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". Weights must be finite, non-negative, and cover all observed levels. NULL generates weights 1, 0.5, 0.25, ... to the required depth.
+#' @param form_weights Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. Weights must be finite, non-negative, and cover all observed forms. NULL generates weights 1, 0.5, 0.25, ... to the required length.
+#' @param form_strategy How to combine word forms: weighting, mean_all, min_all, first, or off.
 #' @param form_delim The delimiter separating different word forms of a single lexical item. Default is "#".
 #' @param cate_delim The delimiter separating different levels of categories within a word form. Default is "_".
 #' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (lexical items) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across lexical items.
 #' @param squareform Whether to return a dataframe in squareform.
-#' @param n_threads The number of threads is used to parallelize the computation. Only meaningful if `parallel` is TRUE.
+#' @param n_threads Number of threads used for computation. Use 1 for sequential computation.
 #' @param quiet Whether to suppress all output messages.
 #' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform.
 #' @examples
