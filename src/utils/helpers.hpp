@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <functional>
+#include <numeric>
 
 using namespace Rcpp;
 
@@ -50,13 +52,7 @@ namespace lingdist
     // Split a single Rcpp String by a delimiter String into StrVec
     StrVec split(const Rcpp::String &target, const Rcpp::String &delim);
 
-    // Split an entire DataFrame into rows of token vectors
-    std::vector<std::vector<StrVec>> split_df(const Rcpp::DataFrame &data, const Rcpp::String &delim);
-
     std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1);
-
-    // Extract all unique tokens from a DataFrame
-    StrVec get_all_unique_syms(const Rcpp::DataFrame &data, const Rcpp::String &delim, bool include_empty = true);
 
     // --- DataFrame Utils ---
 

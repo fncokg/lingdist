@@ -1,4 +1,5 @@
 #include "helpers.hpp"
+#include "symbol_table.hpp"
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -8,7 +9,7 @@ using namespace Rcpp;
 
 namespace lingdist
 {
-    const std::string EMPTY = "_NULL_";
+    const std::string EMPTY = GAP_SYMBOL;
     const double LOG2 = std::log(2.0);
     const double EPS = 1e-9;
 
@@ -47,25 +48,6 @@ namespace lingdist
         Function r_split("strsplit");
         List res = r_split(target, delim);
         return res[0];
-    }
-
-    std::vector<std::vector<StrVec>> split_df(const DataFrame &data, const String &delim)
-    {
-        int nrows = data.nrow(), ncols = data.ncol();
-        std::vector<std::vector<StrVec>> rows_vector;
-        rows_vector.reserve(nrows);
-        for (int i = 0; i < nrows; i++)
-        {
-            std::vector<StrVec> row_vector;
-            row_vector.reserve(ncols);
-            for (int j = 0; j < ncols; j++)
-            {
-                const CharacterVector col = data[j];
-                row_vector.push_back(split(col[i], delim));
-            }
-            rows_vector.push_back(std::move(row_vector));
-        }
-        return rows_vector;
     }
 
     std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1)
@@ -131,26 +113,6 @@ namespace lingdist
             }
         }
         return std::make_tuple(lab1Col, lab2Col, row_pairs);
-    }
-
-    StrVec get_all_unique_syms(const DataFrame &data, const String &delim, bool include_empty)
-    {
-        auto rows_vector = split_df(data, delim);
-        StrVec all_syms;
-        for (auto &row : rows_vector)
-        {
-            for (auto &syms : row)
-            {
-                all_syms.insert(all_syms.end(), syms.begin(), syms.end());
-            }
-        }
-        std::set<std::string> unique_syms(all_syms.begin(), all_syms.end());
-        StrVec unique_syms_vec(unique_syms.begin(), unique_syms.end());
-        if (include_empty)
-        {
-            unique_syms_vec.push_back(lingdist::EMPTY);
-        }
-        return unique_syms_vec;
     }
 
     DataFrame long2squareform(const DataFrame &data, bool symmetric, double default_diag)

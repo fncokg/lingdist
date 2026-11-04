@@ -1,5 +1,5 @@
 #include "alignment.hpp"
-#include "cost_table.hpp"
+#include "indexed_costs.hpp"
 
 using namespace Rcpp;
 
@@ -7,7 +7,7 @@ namespace lingdist
 {
     // dist mat -> id pairs
     // DFS to enumerate all matched optimal paths
-    std::vector<std::vector<Point>> get_matched_paths(std::vector<std::vector<DistPts>> dist, int max_paths)
+    std::vector<std::vector<Point>> get_matched_paths(const std::vector<std::vector<DistPts>> &dist, int max_paths)
     {
         int nrow = static_cast<int>(dist.size());
         int ncol = static_cast<int>(dist[0].size());
@@ -62,28 +62,28 @@ namespace lingdist
         return result;
     }
 
-    // id pairs -> alignment result with strings
-    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths, const String &normalize_method)
+    // Keep token ID pairs for training; decode only when formatting the R report.
+    AlignmentResult get_alignment_result(const TokenSequence &chars1, const TokenSequence &chars2, const IndexedCosts &cost, int max_paths, const std::string &normalize_method)
     {
         AlignmentResult report;
-        std::string char1, char2, opt;
+        TokenId char1, char2;
         int curr_x, curr_y, prev_x, prev_y;
-        auto dist = edit_dist_core_dp_record(chars1, chars2, cost); // Original line
+        auto dist = edit_dist_core_dp_record(chars1, chars2, cost);
         auto paths = get_matched_paths(dist, max_paths);
-        double result = normalize_edit_dist(dist[chars2.size()][chars1.size()].first, chars1, chars2, normalize_method); // Original line
+        double result = normalize_edit_dist(dist[chars2.size()][chars1.size()].first, chars1.size(), chars2.size(), normalize_method);
         report.distance = result;
 
         for (auto &path : paths)
         {
-            std::vector<std::pair<std::string, std::string>> alignments;
+            std::vector<std::pair<TokenId, TokenId>> alignments;
             for (std::size_t j = 1; j < path.size(); j++)
             {
                 curr_x = path[j].first;
                 curr_y = path[j].second;
                 prev_x = path[j - 1].first;
                 prev_y = path[j - 1].second;
-                char1 = curr_y == prev_y ? EMPTY : chars1[curr_y - 1];
-                char2 = curr_x == prev_x ? EMPTY : chars2[curr_x - 1];
+                char1 = curr_y == prev_y ? GAP_TOKEN_ID : chars1[curr_y - 1];
+                char2 = curr_x == prev_x ? GAP_TOKEN_ID : chars2[curr_x - 1];
                 alignments.emplace_back(std::make_pair(char1, char2));
             }
             report.alignments.emplace_back(alignments);
@@ -92,26 +92,26 @@ namespace lingdist
     }
 
     // format alignment result as R List
-    List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths, const String &normalize_method)
+    List get_string_alignment(const TokenSequence &chars1, const TokenSequence &chars2, const IndexedCosts &cost, int max_paths, const std::string &normalize_method)
     {
         List report;
         List path_dfs;
-        AlignmentResult result = get_string_alignment_result(chars1, chars2, cost, max_paths, normalize_method);
-        std::string char1, char2, opt;
+        AlignmentResult result = get_alignment_result(chars1, chars2, cost, max_paths, normalize_method);
+        TokenId char1, char2;
 
         for (auto &path : result.alignments)
         {
             StringVector chars1_col, chars2_col, operation_col;
-            NumericVector cost_col, cumcost_col;
+            NumericVector cost_col;
             for (std::size_t j = 0; j < path.size(); j++)
             {
                 char1 = path[j].first;
                 char2 = path[j].second;
-                opt = char1 == EMPTY ? "insert" : (char2 == EMPTY ? "delete" : (char1 == char2 ? "same" : "substitute"));
-                chars1_col.push_back(char1);
-                chars2_col.push_back(char2);
+                const std::string opt = char1 == GAP_TOKEN_ID ? "insert" : (char2 == GAP_TOKEN_ID ? "delete" : (char1 == char2 ? "same" : "substitute"));
+                chars1_col.push_back(cost.symbol_table().name(char1));
+                chars2_col.push_back(cost.symbol_table().name(char2));
                 operation_col.push_back(opt);
-                cost_col.push_back(cost.get_cost(char1, char2)); // Original line
+                cost_col.push_back(cost.get(char1, char2));
             }
             DataFrame path_df = DataFrame::create(Named("Chars1") = chars1_col, Named("Chars2") = chars2_col, Named("Operation") = operation_col, Named("Cost") = cost_col);
             path_dfs.push_back(path_df);

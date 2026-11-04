@@ -14,6 +14,9 @@ pw_pmi_dist(
   max_epochs = 20L,
   tol = 1e-04,
   alignment_max_paths = 3L,
+  form_strategy = "weighting",
+  form_delim = "#",
+  form_weights = NULL,
   quiet = FALSE
 )
 }
@@ -36,6 +39,12 @@ pw_pmi_dist(
 
 \item{alignment_max_paths}{Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.}
 
+\item{form_strategy}{How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.}
+
+\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.}
+
+\item{form_weights}{Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.}
+
 \item{quiet}{Whether to suppress all output messages.}
 }
 \value{
@@ -55,4 +64,7 @@ df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 result <- pw_pmi_dist(df, delim="_")
 result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 result <- pw_pmi_dist(df, delim="_", n_threads=4)
+forms <- data.frame(word=c("a_b#b", "b_a#a#b"))
+result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
+result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
 }

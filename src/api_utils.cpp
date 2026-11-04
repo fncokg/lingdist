@@ -1,8 +1,8 @@
 #include <Rcpp.h>
 
 #include "helpers.hpp"
-#include "cost_table.hpp"
-#include "alignment.hpp"
+#include "cost_io.hpp"
+#include "prepare_input.hpp"
 
 using namespace Rcpp;
 
@@ -12,15 +12,16 @@ using namespace Rcpp;
 //'
 //' @param data DataFrame to be computed.
 //' @param delim The delimiter separating atomic symbols.
+//' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
 //' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' default.cost <- generate_default_cost_matrix(df, "_")
 //[[Rcpp::export]]
-DataFrame generate_default_cost_matrix(const DataFrame &data, const String &delim = "")
+DataFrame generate_default_cost_matrix(const DataFrame &data, const String &delim = "", const String &form_delim = "#")
 {
-    lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
-    return lingdist::build_default_cost_table(syms).to_dataframe();
+    const auto input = lingdist::prepare_input(data, delim, form_delim);
+    return lingdist::write_costs(lingdist::IndexedCosts::uniform(input.symbol_table()));
 }
 
 //' Convert long table to square form
@@ -52,15 +53,16 @@ DataFrame long2squareform(const DataFrame &data, bool symmetric = true, double d
 //' @param data DataFrame containing the tokenized strings; used to extract symbols to check.
 //' @param delim String delimiter used in `data` to split atomic symbols (empty string means
 //'   split by characters).
+//' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
 //' @return A character vector of symbols that are present in `data` but missing from `cost_mat`.
 //' @examples
 //' cost.mat <- data.frame()
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"), b=c("b_l_i_s","k_a:_l")))
 //' missing <- check_cost_mat_symbols(cost.mat, df, "_")
 //[[Rcpp::export]]
-StringVector check_cost_mat_symbols(const DataFrame &cost_mat, const DataFrame &data, const String &delim)
+StringVector check_cost_mat_symbols(const DataFrame &cost_mat, const DataFrame &data, const String &delim, const String &form_delim = "#")
 {
-    lingdist::CostTable cost_table = lingdist::build_cost_table(cost_mat);
-    lingdist::StrVec missing_symbols = cost_table.check_missing_symbols(data, delim);
+    const auto input = lingdist::prepare_input(data, delim, form_delim);
+    const auto missing_symbols = lingdist::missing_cost_symbols(input.symbol_table(), cost_mat);
     return StringVector::import(missing_symbols.begin(), missing_symbols.end());
 }

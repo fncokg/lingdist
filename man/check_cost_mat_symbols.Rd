@@ -4,7 +4,7 @@
 \alias{check_cost_mat_symbols}
 \title{Check which symbols in `data` are missing from a cost matrix}
 \usage{
-check_cost_mat_symbols(cost_mat, data, delim)
+check_cost_mat_symbols(cost_mat, data, delim, form_delim = "#")
 }
 \arguments{
 \item{cost_mat}{DataFrame representing a cost matrix in square form. Row names and
@@ -14,6 +14,8 @@ column names should be the symbols included in the matrix.}
 
 \item{delim}{String delimiter used in `data` to split atomic symbols (empty string means
 split by characters).}
+
+\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded.}
 }
 \value{
 A character vector of symbols that are present in `data` but missing from `cost_mat`.

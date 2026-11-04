@@ -4,12 +4,14 @@
 \alias{generate_default_cost_matrix}
 \title{Generate a default cost matrix}
 \usage{
-generate_default_cost_matrix(data, delim = "")
+generate_default_cost_matrix(data, delim = "", form_delim = "#")
 }
 \arguments{
 \item{data}{DataFrame to be computed.}
 
 \item{delim}{The delimiter separating atomic symbols.}
+
+\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded.}
 }
 \value{
 Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.

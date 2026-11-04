@@ -5,8 +5,9 @@
 
 namespace lingdist
 {
-    // Basic DP distance, return only distance value
-    double edit_dist_core_dp(const StrVec &vec1, const StrVec &vec2, const CostTable &cost, const String &normalize_method)
+    // Token IDs and GAP_TOKEN_ID all refer to cost.symbol_table(); string
+    // resolution is complete before entering this kernel.
+    double edit_dist_core_dp(const TokenSequence &vec1, const TokenSequence &vec2, const IndexedCosts &cost, const std::string &normalize_method)
     {
         std::size_t len1 = vec1.size(), len2 = vec2.size();
         std::size_t nrow = len2 + 1, ncol = len1 + 1;
@@ -22,34 +23,34 @@ namespace lingdist
         for (std::size_t j = 1; j < ncol; j++)
         {
             // delete the first j symbols of vec1 to match an empty vec2
-            at(0, j) = at(0, j - 1) + cost.get_cost(vec1[j - 1], EMPTY);
+            at(0, j) = at(0, j - 1) + cost.get(vec1[j - 1], GAP_TOKEN_ID);
         }
         for (std::size_t i = 1; i < nrow; i++)
         {
             // insert the first i symbols of vec2 to match an empty vec1
-            at(i, 0) = at(i - 1, 0) + cost.get_cost(EMPTY, vec2[i - 1]);
+            at(i, 0) = at(i - 1, 0) + cost.get(GAP_TOKEN_ID, vec2[i - 1]);
         }
 
         // Fill DP table
         for (std::size_t i = 1; i < nrow; i++)
         {
-            double cost_del = cost.get_cost(EMPTY, vec2[i - 1]);
+            double cost_insert = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
             for (std::size_t j = 1; j < ncol; j++)
             {
-                double cost_ins = cost.get_cost(vec1[j - 1], EMPTY);
-                double cost_sub = cost.get_cost(vec1[j - 1], vec2[i - 1]);
+                double cost_delete = cost.get(vec1[j - 1], GAP_TOKEN_ID);
+                double cost_sub = cost.get(vec1[j - 1], vec2[i - 1]);
                 at(i, j) = std::min({
                     at(i - 1, j - 1) + cost_sub,
-                    at(i, j - 1) + cost_ins,
-                    at(i - 1, j) + cost_del,
+                    at(i, j - 1) + cost_delete,
+                    at(i - 1, j) + cost_insert,
                 });
             }
         }
-        return normalize_edit_dist(at(len2, len1), vec1, vec2, normalize_method);
+        return normalize_edit_dist(at(len2, len1), len1, len2, normalize_method);
     }
 
     // DP with backpointers, return full DP table with paths
-    std::vector<std::vector<DistPts>> edit_dist_core_dp_record(const StrVec &vec1, const StrVec &vec2, const CostTable &cost)
+    std::vector<std::vector<DistPts>> edit_dist_core_dp_record(const TokenSequence &vec1, const TokenSequence &vec2, const IndexedCosts &cost)
     {
         std::size_t len1 = vec1.size(), len2 = vec2.size();
         std::size_t nrow = len2 + 1, ncol = len1 + 1;
@@ -60,27 +61,27 @@ namespace lingdist
         for (std::size_t j = 1; j < ncol; j++)
         {
             dist[0][j] = std::make_pair(
-                dist[0][j - 1].first + cost.get_cost(vec1[j - 1], EMPTY),
+                dist[0][j - 1].first + cost.get(vec1[j - 1], GAP_TOKEN_ID),
                 Points({std::make_pair(0, static_cast<int>(j - 1))}));
         }
         for (std::size_t i = 1; i < nrow; i++)
         {
             dist[i][0] = std::make_pair(
-                dist[i - 1][0].first + cost.get_cost(EMPTY, vec2[i - 1]),
+                dist[i - 1][0].first + cost.get(GAP_TOKEN_ID, vec2[i - 1]),
                 Points({std::make_pair(static_cast<int>(i - 1), 0)}));
         }
 
         for (std::size_t i = 1; i < nrow; i++)
         {
-            double cost_del = cost.get_cost(EMPTY, vec2[i - 1]);
+            double cost_insert = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
             for (std::size_t j = 1; j < ncol; j++)
             {
-                double cost_ins = cost.get_cost(vec1[j - 1], EMPTY);
-                double cost_sub = cost.get_cost(vec1[j - 1], vec2[i - 1]);
+                double cost_delete = cost.get(vec1[j - 1], GAP_TOKEN_ID);
+                double cost_sub = cost.get(vec1[j - 1], vec2[i - 1]);
                 std::vector<double> possible_values({
                     dist[i - 1][j - 1].first + cost_sub,
-                    dist[i][j - 1].first + cost_ins,
-                    dist[i - 1][j].first + cost_del,
+                    dist[i][j - 1].first + cost_delete,
+                    dist[i - 1][j].first + cost_insert,
                 });
                 double min_value = *std::min_element(possible_values.begin(), possible_values.end());
                 Points source_points;
@@ -97,7 +98,7 @@ namespace lingdist
     }
 
     // For performance reasons, we do not check the validity of `method` here. Checking should be done at the higher level before calling this function.
-    double normalize_edit_dist(double dist, const StrVec &vec1, const StrVec &vec2, const String &method)
+    double normalize_edit_dist(double dist, std::size_t len1, std::size_t len2, const std::string &method)
     {
         // fastest case: no normalization
         if (method == "none")
@@ -105,8 +106,6 @@ namespace lingdist
             return dist; // no normalization
         }
 
-        std::size_t len1 = vec1.size();
-        std::size_t len2 = vec2.size();
         if (method == "longest")
         {
             size_t max_len = std::max(len1, len2);

@@ -71,6 +71,9 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' @param max_epochs Maximum number of epochs; must be at least 1.
 #' @param tol Finite positive tolerance for convergence.
 #' @param alignment_max_paths Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
+#' @param form_strategy How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.
+#' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.
+#' @param form_weights Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.
 #' @param quiet Whether to suppress all output messages.
 #' @return A list containing the following components:
 #' \item{result}{A dataframe of distances, either in long table form or square form.}
@@ -84,8 +87,11 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' result <- pw_pmi_dist(df, delim="_")
 #' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 #' result <- pw_pmi_dist(df, delim="_", n_threads=4)
-pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, quiet)
+#' forms <- data.frame(word=c("a_b#b", "b_a#a#b"))
+#' result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
+#' result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
+pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, form_strategy = "weighting", form_delim = "#", form_weights = NULL, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, form_strategy, form_delim, form_weights, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe
@@ -117,12 +123,13 @@ pw_wjd <- function(data, cate_delim = "_", cate_weights = NULL, form_strategy = 
 #'
 #' @param data DataFrame to be computed.
 #' @param delim The delimiter separating atomic symbols.
+#' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
 #' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 #' @examples
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 #' default.cost <- generate_default_cost_matrix(df, "_")
-generate_default_cost_matrix <- function(data, delim = "") {
-    .Call(`_lingdist_generate_default_cost_matrix`, data, delim)
+generate_default_cost_matrix <- function(data, delim = "", form_delim = "#") {
+    .Call(`_lingdist_generate_default_cost_matrix`, data, delim, form_delim)
 }
 
 #' Convert long table to square form
@@ -152,12 +159,13 @@ long2squareform <- function(data, symmetric = TRUE, default_diag = 0.0) {
 #' @param data DataFrame containing the tokenized strings; used to extract symbols to check.
 #' @param delim String delimiter used in `data` to split atomic symbols (empty string means
 #'   split by characters).
+#' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
 #' @return A character vector of symbols that are present in `data` but missing from `cost_mat`.
 #' @examples
 #' cost.mat <- data.frame()
 #' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"), b=c("b_l_i_s","k_a:_l")))
 #' missing <- check_cost_mat_symbols(cost.mat, df, "_")
-check_cost_mat_symbols <- function(cost_mat, data, delim) {
-    .Call(`_lingdist_check_cost_mat_symbols`, cost_mat, data, delim)
+check_cost_mat_symbols <- function(cost_mat, data, delim, form_delim = "#") {
+    .Call(`_lingdist_check_cost_mat_symbols`, cost_mat, data, delim, form_delim)
 }
 

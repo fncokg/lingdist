@@ -1,73 +1,80 @@
 #include <Rcpp.h>
 #include <RcppThread.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
-#include <set>
-#include <string>
-#include <utility>
-#include <memory>
 
-#include "helpers.hpp"
-#include "cost_table.hpp"
-#include "dp.hpp"
-#include "alignment.hpp"
 #include "dist.hpp"
+#include "dp.hpp"
 #include "dispatcher.hpp"
+#include "cost_io.hpp"
+#include "prepare_input.hpp"
 
-using namespace Rcpp;
+namespace
+{
+    void validate_normalization(const String &method)
+    {
+        if (method != "longest" && method != "none")
+            stop("Unsupported normalize_method. Supported values are 'longest' and 'none'.");
+    }
+
+    void warn_missing(const lingdist::SymbolTable &symbols, const DataFrame &matrix)
+    {
+        const auto missing = lingdist::missing_cost_symbols(symbols, matrix);
+        if (missing.empty()) return;
+        std::string message;
+        for (const auto &name : missing) message += name + ", ";
+        warning("The cost matrix is missing symbols: %s. Undefined operations use 0 for matching and 1 otherwise.", message.c_str());
+    }
+}
 
 namespace lingdist
 {
-
-    DataFrame edit_dist_df(const DataFrame &data, const CostTable &cost, const String &delim, bool detailed, const String &normalize_method, const String &form_strategy, const String &form_delim, std::vector<double> form_weights, bool squareform, bool symmetric, int n_threads, bool check_missing_cost, bool quiet)
+    DataFrame edit_dist_prepared(const PreparedInput &input, const IndexedCosts &cost, const FormPolicy &policy,
+                                bool detailed, const String &normalize_method, bool squareform,
+                                bool symmetric, int n_threads, bool quiet)
     {
-        if (normalize_method != "longest" && normalize_method != "none")
+        validate_normalization(normalize_method);
+        if (!input.symbol_table().same_id_space(cost.symbol_table()))
+            throw std::invalid_argument("Input and costs must share the same SymbolTable.");
+        const std::string method = normalize_method;
+        const auto pairs = make_row_pairs(input, symmetric);
+        StringVector labels1(pairs.size()), labels2(pairs.size());
+        for (std::size_t i = 0; i < pairs.size(); ++i)
         {
-            stop("Unsupported normalize_method. Supported values are 'longest' and 'none'.");
+            labels1[i] = input.row_names()[pairs[i].source];
+            labels2[i] = input.row_names()[pairs[i].target];
         }
-
-        if (check_missing_cost && !cost.is_fast)
+        std::vector<std::vector<double>> distances(pairs.size());
+        std::unique_ptr<SafeProgressBar> bar;
+        if (!quiet) bar = std::make_unique<SafeProgressBar>(pairs.size(), 1);
+        RcppThread::parallelFor(0, pairs.size(), [&](std::size_t i)
         {
-            lingdist::StrVec missing_symbols = cost.check_missing_symbols(data, delim);
-            if (!missing_symbols.empty())
+            auto &row = distances[i];
+            row.assign(input.ncol(), NA_REAL);
+            for (std::size_t col = 0; col < input.ncol(); ++col)
             {
-                std::string missing_symbols_str;
-                for (const auto &s : missing_symbols)
-                {
-                    missing_symbols_str += s + ", ";
-                }
-                warning("Warning: The cost table is missing the following symbols found in the data: %s. Cost values for these symbols will be treated as 1.0 (deletion/insertion/substitution) or 0.0 (matching) by default.\n",
-                        missing_symbols_str.c_str());
+                row[col] = evaluate_forms(input.cell_forms(pairs[i].source, col),
+                    input.cell_forms(pairs[i].target, col), policy, [&](WordId a, WordId b)
+                    { return edit_dist_core_dp(input.word(a), input.word(b), cost, method); });
             }
-        }
-        auto rows_vector = lingdist::split_df2(data, form_delim, delim, form_strategy == "off");
-        if (form_strategy == "weighting")
-            form_weights = prepare_weights(rows_vector, std::move(form_weights), false, "form_weights");
-        auto [lab1Col, lab2Col, row_pairs] = lingdist::get_row_pairs(data, symmetric);
-
-        int n_row_pairs = static_cast<int>(row_pairs.size());
-
-        std::unique_ptr<lingdist::SafeProgressBar> bar;
-        if (!quiet)
-            bar = std::make_unique<lingdist::SafeProgressBar>(row_pairs.size(), 1);
-        std::vector<std::vector<double>> dists_vec(row_pairs.size());
-
-        lingdist::DistFunc dist_func = [&](const lingdist::StrVec &chars1, const lingdist::StrVec &chars2)
-        { return lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method); };
-
-        lingdist::FormsDispatcher dispatcher = make_dispatcher(form_strategy, dist_func, form_weights);
-
-        std::function<void(std::int32_t)> loop_body = [&](std::int32_t idx)
-        {
-            auto [rowi, rowj] = row_pairs[idx];
-            dists_vec[idx] = dist_row_pair(rows_vector[rowi], rows_vector[rowj], dispatcher);
-            if (bar)
-                (*bar)++;
-        };
-        RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
-
-        return gen_dist_df(dists_vec, lab1Col, lab2Col, detailed, as<StrVec>(data.names()), squareform, symmetric);
+            if (bar) (*bar)++;
+        }, n_threads);
+        return gen_dist_df(std::move(distances), labels1, labels2, detailed,
+                           input.column_names(), squareform, symmetric);
     }
 
+    DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat, const String &delim,
+                          bool detailed, const String &normalize_method, const String &form_strategy,
+                          const String &form_delim, std::vector<double> form_weights,
+                          bool squareform, bool symmetric, int n_threads, bool check_missing_cost,
+                          bool quiet, double default_sub_cost, double default_ins_del_cost)
+    {
+        validate_normalization(normalize_method);
+        const auto strategy = parse_form_strategy(static_cast<std::string>(form_strategy));
+        const auto input = prepare_input(data, delim, form_delim, strategy != FormStrategy::Off);
+        const auto policy = make_form_policy(strategy, input.max_forms(), std::move(form_weights));
+        const auto cost = cost_mat.isNull()
+            ? IndexedCosts::uniform(input.symbol_table(), default_sub_cost, default_ins_del_cost)
+            : read_costs(input.symbol_table(), DataFrame(cost_mat));
+        if (check_missing_cost && cost_mat.isNotNull()) warn_missing(input.symbol_table(), DataFrame(cost_mat));
+        return edit_dist_prepared(input, cost, policy, detailed, normalize_method, squareform, symmetric, n_threads, quiet);
+    }
 }

@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "alignment.hpp"
+#include "cost_io.hpp"
 #include "dist.hpp"
 
 using namespace Rcpp;
@@ -43,26 +44,23 @@ namespace
 //[[Rcpp::export]]
 List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", const String &normalize_method = "longest", bool return_alignments = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
-    lingdist::CostTable cost;
-    if (cost_mat.isNotNull())
-    {
-        DataFrame cost_mat_ = DataFrame(cost_mat);
-        cost = lingdist::build_cost_table(cost_mat_);
-    }
-    else
-    {
-        // this is unsafe: when `cost.to_dataframe()` is called, it returns an empty cost table
-        cost = lingdist::build_fast_cost_table(lingdist::StrVec(), default_sub_cost, default_ins_del_cost);
-    }
-    lingdist::StrVec chars1 = lingdist::split(str1, delim);
-    lingdist::StrVec chars2 = lingdist::split(str2, delim);
+    const auto chars1 = lingdist::split(str1, delim);
+    const auto chars2 = lingdist::split(str2, delim);
+    auto alphabet = chars1;
+    alphabet.insert(alphabet.end(), chars2.begin(), chars2.end());
+    const lingdist::SymbolTable symbols(alphabet);
+    const auto cost = cost_mat.isNull()
+        ? lingdist::IndexedCosts::uniform(symbols, default_sub_cost, default_ins_del_cost)
+        : lingdist::read_costs(symbols, DataFrame(cost_mat));
+    const auto source = symbols.encode(chars1), target = symbols.encode(chars2);
+    const std::string method = normalize_method;
     if (return_alignments)
     {
-        return lingdist::get_string_alignment(chars1, chars2, cost, 10, normalize_method);
+        return lingdist::get_string_alignment(source, target, cost, 10, method);
     }
     else
     {
-        double result = lingdist::edit_dist_core_dp(chars1, chars2, cost, normalize_method);
+        double result = lingdist::edit_dist_core_dp(source, target, cost, method);
         List report;
         report["distance"] = result;
         return report;
@@ -101,19 +99,10 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //[[Rcpp::export]]
 DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
 {
-    lingdist::CostTable cost;
-    if (cost_mat.isNotNull())
-    {
-        DataFrame cost_mat_ = DataFrame(cost_mat);
-        cost = lingdist::build_cost_table(cost_mat_);
-    }
-    else
-    {
-        lingdist::StrVec syms = lingdist::get_all_unique_syms(data, delim, true);
-        cost = lingdist::build_fast_cost_table(syms, default_sub_cost, default_ins_del_cost);
-    }
-    std::vector<double> form_weights_vec = read_weights(form_weights, "form_weights");
-    return lingdist::edit_dist_df(data, cost, delim, detailed, normalize_method, form_strategy, form_delim, form_weights_vec, squareform, symmetric, n_threads, check_missing_cost, quiet);
+    const auto form_weights_vec = read_weights(form_weights, "form_weights");
+    return lingdist::edit_dist_df(data, cost_mat, delim, detailed, normalize_method, form_strategy,
+                                 form_delim, form_weights_vec, squareform, symmetric, n_threads,
+                                 check_missing_cost, quiet, default_sub_cost, default_ins_del_cost);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe
@@ -129,6 +118,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' @param max_epochs Maximum number of epochs; must be at least 1.
 //' @param tol Finite positive tolerance for convergence.
 //' @param alignment_max_paths Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
+//' @param form_strategy How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.
+//' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.
+//' @param form_weights Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.
 //' @param quiet Whether to suppress all output messages.
 //' @return A list containing the following components:
 //' \item{result}{A dataframe of distances, either in long table form or square form.}
@@ -142,10 +134,14 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(df, delim="_")
 //' result <- pw_pmi_dist(df, delim="_", squareform=TRUE)
 //' result <- pw_pmi_dist(df, delim="_", n_threads=4)
+//' forms <- data.frame(word=c("a_b#b", "b_a#a#b"))
+//' result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
+//' result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, bool quiet = false)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, int alignment_max_paths = 3, const String &form_strategy = "weighting", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, quiet);
+    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol,
+                            alignment_max_paths, form_strategy, form_delim, read_weights(form_weights, "form_weights"), quiet);
 }
 
 //' Compute Weighted Jaccard Distance between all row pairs of a dataframe

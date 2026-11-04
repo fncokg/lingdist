@@ -3,7 +3,7 @@
 #include <Rcpp.h>
 #include "helpers.hpp"
 #include "dp.hpp"
-#include "cost_table.hpp"
+#include "indexed_costs.hpp"
 
 namespace lingdist
 {
@@ -11,15 +11,15 @@ namespace lingdist
     struct AlignmentResult
     {
         double distance;
-        std::vector<std::vector<std::pair<std::string, std::string>>> alignments;
+        std::vector<std::vector<std::pair<TokenId, TokenId>>> alignments;
     };
 
     // Enumerate all matched optimal paths from recorded DP table
-    std::vector<std::vector<Point>> get_matched_paths(std::vector<std::vector<DistPts>> dist, int max_paths = 10);
+    std::vector<std::vector<Point>> get_matched_paths(const std::vector<std::vector<DistPts>> &dist, int max_paths = 10);
 
-    AlignmentResult get_string_alignment_result(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10, const String &normalize_method = "longest");
+    AlignmentResult get_alignment_result(const TokenSequence &chars1, const TokenSequence &chars2, const IndexedCosts &cost, int max_paths = 10, const std::string &normalize_method = "longest");
 
     // Build alignment report list for two token sequences
-    Rcpp::List get_string_alignment(const StrVec &chars1, const StrVec &chars2, const CostTable &cost, int max_paths = 10, const String &normalize_method = "longest");
+    Rcpp::List get_string_alignment(const TokenSequence &chars1, const TokenSequence &chars2, const IndexedCosts &cost, int max_paths = 10, const std::string &normalize_method = "longest");
 
 } // namespace lingdist
