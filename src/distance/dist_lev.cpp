@@ -29,6 +29,7 @@ namespace
 
 namespace lingdist
 {
+    // TODO: Utilize aggregation or caching to avoid repeated evaluation of the same form pairs.
     DataFrame edit_dist_prepared(const PreparedInput &input, const IndexedCosts &cost, const FormPolicy &policy,
                                  bool detailed, const String &normalize_method, bool squareform,
                                  bool symmetric, int n_threads, bool quiet)

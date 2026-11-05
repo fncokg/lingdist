@@ -1,3 +1,23 @@
+# lingdist 3.0.0 2026-11-05
+
+**Important:** This release fixes multiple serious bugs in the PMI algorithm. **PMI results produced by any version before 3.0.0 are unreliable and should be recomputed.**
+
+Performance improvements:
+
+- Rebuilt the C++ core around dense symbol IDs, cached input and word pairs, and shared cost tables.
+- PMI now computes expected counts over all optimal alignments without enumerating paths, improving speed and memory use.
+
+Bug fixes:
+
+- Fixed PMI alignment weighting, cost matrix indexing, DP initialization, and edge cases; final distances now use the returned cost matrix.
+- Fixed missing-data handling and WJD comparisons between categories of different depths.
+
+New features and breaking changes:
+
+- Added column-wise distance output, edit-distance normalization (default: longest string), and shared strategies for multiple word forms.
+- Added PMI damping, smoothing, minimum nonmatching cost controls, and convergence status.
+- Removed `parallel`; use `n_threads` to control threading (`1` for sequential computation). Removed PMI's `alignment_max_paths` and renamed WJD weights to `cate_weights` and `form_weights`.
+
 # lingdist 2.3.1 2026-01-09
 
 Bug fix: fixed the wrong logic in `AlignmentCount.rx2idx()` that caused incorrect alignment counting in PMI distance calculation.
