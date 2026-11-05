@@ -27,7 +27,7 @@ string_edit_dist(
 
 \item{normalize_method}{Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.}
 
-\item{return_alignments}{Whether to return alignment details}
+\item{return_alignments}{Whether to return alignment details for up to 10 paths. This display limit does not apply to PMI training.}
 
 \item{default_sub_cost}{Default substitution cost when `cost_mat` is NULL.}
 
@@ -39,7 +39,7 @@ string_edit_dist(
 A list containing a `distance` element storing the distance result. If `return_alignments` is TRUE, then an `alignments` element is present which is a list of dataframes with each storing a possible best alignment scenario.
 }
 \description{
-Compute edit distance between two strings and get all possible alignment scenarios. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
+Compute edit distance between two strings and optionally display up to 10 optimal alignments. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
 }
 \examples{
 cost.mat <- data.frame()

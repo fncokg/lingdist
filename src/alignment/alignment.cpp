@@ -1,76 +1,51 @@
 #include "alignment.hpp"
 #include "indexed_costs.hpp"
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
 
 using namespace Rcpp;
 
 namespace lingdist
 {
-    // dist mat -> id pairs
-    // DFS to enumerate all matched optimal paths
-    std::vector<std::vector<Point>> get_matched_paths(const std::vector<std::vector<DistPts>> &dist, int max_paths)
+    std::vector<AlignmentPath> get_matched_paths(const AlignmentDAG &dag, int max_paths)
     {
-        int nrow = static_cast<int>(dist.size());
-        int ncol = static_cast<int>(dist[0].size());
-
-        std::vector<std::vector<Point>> result;
-        // A stack to store the points to explore and a path from start to the point
-        std::vector<std::pair<Point, std::vector<Point>>> stack;
-
-        // Now we start from the bottom-right corner
-        stack.push_back(std::make_pair(std::make_pair(nrow - 1, ncol - 1), std::vector<Point>()));
+        if (max_paths < 1)
+            throw std::invalid_argument("Path limit must be positive.");
+        std::vector<AlignmentPath> result;
+        std::vector<std::pair<std::size_t, AlignmentPath>> stack;
+        stack.emplace_back(dag.distance.size() - 1, AlignmentPath{});
         while (!stack.empty())
         {
-            // Now we explore the top point in the stack
-            int curr_x = stack.back().first.first;
-            int curr_y = stack.back().first.second;
-            std::vector<Point> curr_path = stack.back().second;
+            const auto cell = stack.back().first;
+            auto path = std::move(stack.back().second);
             stack.pop_back();
-
-            // Add this point to the current path
-            // NOTE: we add point from the end to start, so later we need to reverse the path
-            // We do not insert at the beginning for performance reason: inserting at the beginning of a vector is O(n) while push_back is O(1)
-            curr_path.push_back(std::make_pair(curr_x, curr_y));
-
-            // Check if we reached the start point
-            if (curr_x == 0 && curr_y == 0)
+            path.push_back(cell);
+            if (cell == 0)
             {
-                // We found a complete path, reverse it and add to result
-                std::reverse(curr_path.begin(), curr_path.end());
-                result.push_back(curr_path);
-
-                // Check if we reached max paths, if so, we stop
-                if (static_cast<int>(result.size()) >= max_paths)
-                {
+                std::reverse(path.begin(), path.end());
+                result.push_back(std::move(path));
+                if (result.size() >= static_cast<std::size_t>(max_paths))
                     break;
-                }
             }
             else
             {
-                // We are not at the start point, so the current point must have source points
-                Points prev_points = dist[curr_x][curr_y].second;
-
-                // Push those source points to the stack for further exploration
-                // The next iteration will explore the last pushed point (DFS)
-                for (auto &pt : prev_points)
-                {
-                    // pt is a source point leading to (curr_x, curr_y)
-                    // We will explore it
-                    stack.push_back(std::make_pair(pt, curr_path));
-                }
+                for_each_predecessor(dag, cell, [&](std::size_t predecessor, std::uint8_t)
+                                     { stack.emplace_back(predecessor, path); });
             }
         }
         return result;
     }
 
-    // Keep token ID pairs for training; decode only when formatting the R report.
+    // Decode token IDs only when formatting the R display report.
     AlignmentResult get_alignment_result(const TokenSequence &chars1, const TokenSequence &chars2, const IndexedCosts &cost, int max_paths, const std::string &normalize_method)
     {
         AlignmentResult report;
         TokenId char1, char2;
-        int curr_x, curr_y, prev_x, prev_y;
-        auto dist = edit_dist_core_dp_record(chars1, chars2, cost);
-        auto paths = get_matched_paths(dist, max_paths);
-        double result = normalize_edit_dist(dist[chars2.size()][chars1.size()].first, chars1.size(), chars2.size(), normalize_method);
+        AlignmentDAG dag;
+        ed_dp_with_dag(chars1, chars2, cost, dag);
+        auto paths = get_matched_paths(dag, max_paths);
+        double result = normalize_edit_dist(dag.distance.back(), chars1.size(), chars2.size(), normalize_method);
         report.distance = result;
 
         for (auto &path : paths)
@@ -78,10 +53,8 @@ namespace lingdist
             std::vector<std::pair<TokenId, TokenId>> alignments;
             for (std::size_t j = 1; j < path.size(); j++)
             {
-                curr_x = path[j].first;
-                curr_y = path[j].second;
-                prev_x = path[j - 1].first;
-                prev_y = path[j - 1].second;
+                const auto curr_x = path[j] / dag.ncol, curr_y = path[j] % dag.ncol;
+                const auto prev_x = path[j - 1] / dag.ncol, prev_y = path[j - 1] % dag.ncol;
                 char1 = curr_y == prev_y ? GAP_TOKEN_ID : chars1[curr_y - 1];
                 char2 = curr_x == prev_x ? GAP_TOKEN_ID : chars2[curr_x - 1];
                 alignments.emplace_back(std::make_pair(char1, char2));

@@ -13,7 +13,6 @@ pw_pmi_dist(
   n_threads = 4L,
   max_epochs = 20L,
   tol = 1e-04,
-  alignment_max_paths = 3L,
   form_strategy = "weighting",
   form_delim = "#",
   form_weights = NULL,
@@ -31,13 +30,11 @@ pw_pmi_dist(
 
 \item{squareform}{Whether to return a dataframe in squareform.}
 
-\item{n_threads}{Number of threads used for computation. Use 1 for sequential computation.}
+\item{n_threads}{Positive number of threads used for computation. Use 1 for sequential computation.}
 
 \item{max_epochs}{Maximum number of epochs; must be at least 1.}
 
 \item{tol}{Finite positive tolerance for convergence.}
-
-\item{alignment_max_paths}{Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.}
 
 \item{form_strategy}{How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.}
 
@@ -58,6 +55,14 @@ A list containing the following components:
 }
 \description{
 Compute PMI (Pointwise Mutual Information) distance between all row pairs of a dataframe.
+}
+\details{
+Training uses the expected nonmatching token-pair occurrences over all paths
+in the optimal alignment DAG, with equal probability for each complete path.
+A DP predecessor is retained when its candidate cost differs from the local
+minimum by less than 1e-9. Matching edges affect path probabilities but are
+excluded from PMI observations. Form weights are applied separately; there
+is no training path limit or length weighting.
 }
 \examples{
 df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))

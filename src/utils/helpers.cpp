@@ -11,7 +11,6 @@ namespace lingdist
 {
     const std::string EMPTY = GAP_SYMBOL;
     const double LOG2 = std::log(2.0);
-    const double EPS = 1e-9;
 
     void singleFor(int begin,
                    int end,

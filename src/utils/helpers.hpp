@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <functional>
 #include <numeric>
+#include "numeric.hpp"
 
 using namespace Rcpp;
 
@@ -18,13 +19,6 @@ namespace lingdist
     // Public constants
     extern const std::string EMPTY;
     extern const double LOG2;
-    extern const double EPS;
-
-    // Check double equality within EPS
-    inline bool double_equal(double a, double b)
-    {
-        return std::abs(a - b) < EPS;
-    }
 
     // Safe progressbar
     // To suppress warnings about inheriting from class with virtual functions
@@ -35,9 +29,6 @@ namespace lingdist
     };
 
     // Common type aliases
-    using Point = std::pair<int, int>;
-    using Points = std::vector<Point>;
-    using DistPts = std::pair<double, Points>;
     using StrVec = std::vector<std::string>;
     using FormsDispatcher = std::function<double(const std::vector<lingdist::StrVec> &, const std::vector<lingdist::StrVec> &)>;
     using DistFunc = std::function<double(const lingdist::StrVec &, const lingdist::StrVec &)>;

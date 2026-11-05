@@ -5,9 +5,8 @@
 
 namespace lingdist
 {
-    // Token IDs and GAP_TOKEN_ID all refer to cost.symbol_table(); string
-    // resolution is complete before entering this kernel.
-    double edit_dist_core_dp(const TokenSequence &vec1, const TokenSequence &vec2, const IndexedCosts &cost, const std::string &normalize_method)
+    // Token IDs and GAP_TOKEN_ID all refer to cost.symbol_table(); string resolution is complete before entering this kernel.
+    double ed_dp(const TokenSequence &vec1, const TokenSequence &vec2, const IndexedCosts &cost, const std::string &normalize_method)
     {
         std::size_t len1 = vec1.size(), len2 = vec2.size();
         std::size_t nrow = len2 + 1, ncol = len1 + 1;
@@ -34,67 +33,65 @@ namespace lingdist
         // Fill DP table
         for (std::size_t i = 1; i < nrow; i++)
         {
-            double cost_insert = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
+            double cost_ins = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
             for (std::size_t j = 1; j < ncol; j++)
             {
-                double cost_delete = cost.get(vec1[j - 1], GAP_TOKEN_ID);
+                double cost_del = cost.get(vec1[j - 1], GAP_TOKEN_ID);
                 double cost_sub = cost.get(vec1[j - 1], vec2[i - 1]);
                 at(i, j) = std::min({
                     at(i - 1, j - 1) + cost_sub,
-                    at(i, j - 1) + cost_delete,
-                    at(i - 1, j) + cost_insert,
+                    at(i, j - 1) + cost_del,
+                    at(i - 1, j) + cost_ins,
                 });
             }
         }
         return normalize_edit_dist(at(len2, len1), len1, len2, normalize_method);
     }
 
-    // DP with backpointers, return full DP table with paths
-    std::vector<std::vector<DistPts>> edit_dist_core_dp_record(const TokenSequence &vec1, const TokenSequence &vec2, const IndexedCosts &cost)
+    void ed_dp_with_dag(const TokenSequence &vec1, const TokenSequence &vec2,
+                        const IndexedCosts &cost, AlignmentDAG &out)
     {
-        std::size_t len1 = vec1.size(), len2 = vec2.size();
-        std::size_t nrow = len2 + 1, ncol = len1 + 1;
-
-        // The only difference: dist table stores (distance, source points) pairs
-        std::vector<std::vector<DistPts>> dist(nrow, std::vector<DistPts>(ncol, std::make_pair(0.0, Points{})));
-
-        for (std::size_t j = 1; j < ncol; j++)
+        const auto cells = (vec1.size() + 1) * (vec2.size() + 1);
+        out.nrow = vec2.size() + 1;
+        out.ncol = vec1.size() + 1;
+        // Reset the complete active area when reusing a larger workspace.
+        out.distance.assign(cells, 0.0);
+        out.predecessor_mask.assign(cells, 0);
+        auto &dist = out.distance;
+        auto &masks = out.predecessor_mask;
+        const auto ncol = out.ncol;
+        for (std::size_t j = 1; j < ncol; ++j)
         {
-            dist[0][j] = std::make_pair(
-                dist[0][j - 1].first + cost.get(vec1[j - 1], GAP_TOKEN_ID),
-                Points({std::make_pair(0, static_cast<int>(j - 1))}));
+            dist[j] = dist[j - 1] + cost.get(vec1[j - 1], GAP_TOKEN_ID);
+            masks[j] = FROM_DEL;
         }
-        for (std::size_t i = 1; i < nrow; i++)
+        for (std::size_t i = 1; i < out.nrow; ++i)
         {
-            dist[i][0] = std::make_pair(
-                dist[i - 1][0].first + cost.get(GAP_TOKEN_ID, vec2[i - 1]),
-                Points({std::make_pair(static_cast<int>(i - 1), 0)}));
+            const auto cell = i * ncol;
+            dist[cell] = dist[cell - ncol] + cost.get(GAP_TOKEN_ID, vec2[i - 1]);
+            masks[cell] = FROM_INS;
         }
-
-        for (std::size_t i = 1; i < nrow; i++)
+        for (std::size_t i = 1; i < out.nrow; ++i)
         {
-            double cost_insert = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
-            for (std::size_t j = 1; j < ncol; j++)
+            const auto insertion = cost.get(GAP_TOKEN_ID, vec2[i - 1]);
+            for (std::size_t j = 1; j < ncol; ++j)
             {
-                double cost_delete = cost.get(vec1[j - 1], GAP_TOKEN_ID);
-                double cost_sub = cost.get(vec1[j - 1], vec2[i - 1]);
-                std::vector<double> possible_values({
-                    dist[i - 1][j - 1].first + cost_sub,
-                    dist[i][j - 1].first + cost_delete,
-                    dist[i - 1][j].first + cost_insert,
-                });
-                double min_value = *std::min_element(possible_values.begin(), possible_values.end());
-                Points source_points;
-                if (double_equal(possible_values[0], min_value))
-                    source_points.emplace_back(static_cast<int>(i - 1), static_cast<int>(j - 1));
-                if (double_equal(possible_values[1], min_value))
-                    source_points.emplace_back(static_cast<int>(i), static_cast<int>(j - 1));
-                if (double_equal(possible_values[2], min_value))
-                    source_points.emplace_back(static_cast<int>(i - 1), static_cast<int>(j));
-                dist[i][j] = std::make_pair(min_value, source_points);
+                const auto cell = i * ncol + j;
+                const double cost_sub = dist[cell - ncol - 1] + cost.get(vec1[j - 1], vec2[i - 1]);
+                const double cost_del = dist[cell - 1] + cost.get(vec1[j - 1], GAP_TOKEN_ID);
+                const double cost_ins = dist[cell - ncol] + insertion;
+                const auto best = std::min({cost_sub, cost_del, cost_ins});
+                dist[cell] = best;
+                // Preserve the existing absolute local tolerance. Paths in this
+                // graph need not lie within one EPS of the final minimum cost.
+                if (double_equal(cost_sub, best))
+                    masks[cell] |= FROM_SUB;
+                if (double_equal(cost_del, best))
+                    masks[cell] |= FROM_DEL;
+                if (double_equal(cost_ins, best))
+                    masks[cell] |= FROM_INS;
             }
         }
-        return dist;
     }
 
     // For performance reasons, we do not check the validity of `method` here. Checking should be done at the higher level before calling this function.

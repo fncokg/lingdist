@@ -2,7 +2,7 @@ PKG_LIBS = `"$(R_HOME)/bin/Rscript" -e "RcppThread::LdFlags()"`
 
 PKG_CPPFLAGS = -I./alignment -I./distance -I./dp -I./utils -I./api_wrappers
 
-OBJECTS = alignment/alignment.o \
+OBJECTS = alignment/alignment.o alignment/expected_counts.o \
 	distance/dist_lev.o distance/dist_pmi.o distance/dist_wjd.o \
 	dp/dp.o \
 	utils/helpers.o utils/form_policy.o utils/symbol_table.o utils/indexed_costs.o utils/cost_io.o utils/prepared_input.o utils/prepare_input.o \

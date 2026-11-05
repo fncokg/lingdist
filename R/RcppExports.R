@@ -3,14 +3,14 @@
 
 #' Compute edit distance between two strings
 #'
-#' Compute edit distance between two strings and get all possible alignment scenarios. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
+#' Compute edit distance between two strings and optionally display up to 10 optimal alignments. Custom cost matrix is supported. Symbols separated by custom delimiters are supported.
 #'
 #' @param str1 String to be compared.
 #' @param str2 String to be compared.
 #' @param cost_mat Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.
 #' @param delim The delimiter in `str1` and `str2` separating atomic symbols.
 #' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
-#' @param return_alignments Whether to return alignment details
+#' @param return_alignments Whether to return alignment details for up to 10 paths. This display limit does not apply to PMI training.
 #' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 #' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 #' @param quiet Whether to suppress all output messages.
@@ -62,15 +62,21 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #'
 #' Compute PMI (Pointwise Mutual Information) distance between all row pairs of a dataframe.
 #'
+#' Training uses the expected nonmatching token-pair occurrences over all paths
+#' in the optimal alignment DAG, with equal probability for each complete path.
+#' A DP predecessor is retained when its candidate cost differs from the local
+#' minimum by less than 1e-9. Matching edges affect path probabilities but are
+#' excluded from PMI observations. Form weights are applied separately; there
+#' is no training path limit or length weighting.
+#'
 #' @param data DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.
 #' @param delim The delimiter separating atomic symbols.
 #' @param detailed Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.
 #' @param normalize_method Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.
 #' @param squareform Whether to return a dataframe in squareform.
-#' @param n_threads Number of threads used for computation. Use 1 for sequential computation.
+#' @param n_threads Positive number of threads used for computation. Use 1 for sequential computation.
 #' @param max_epochs Maximum number of epochs; must be at least 1.
 #' @param tol Finite positive tolerance for convergence.
-#' @param alignment_max_paths Maximum number of paths to consider in alignment; must be at least 1. There may be multiple optimal alignment paths between two strings; this parameter limits how many of them are considered when updating the cost matrix in each epoch.
 #' @param form_strategy How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.
 #' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.
 #' @param form_weights Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.
@@ -90,8 +96,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' forms <- data.frame(word=c("a_b#b", "b_a#a#b"))
 #' result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
 #' result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
-pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, alignment_max_paths = 3L, form_strategy = "weighting", form_delim = "#", form_weights = NULL, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, alignment_max_paths, form_strategy, form_delim, form_weights, quiet)
+pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, form_strategy = "weighting", form_delim = "#", form_weights = NULL, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, form_strategy, form_delim, form_weights, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe

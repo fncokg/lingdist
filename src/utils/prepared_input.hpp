@@ -22,7 +22,7 @@ namespace lingdist
     {
         Ordered,
         // The caller must establish symmetry of both costs and path rules.
-        // In particular this is unsafe for the current truncated PMI traversal.
+        // Limited display DFS paths alone do not establish this property.
         Symmetric
     };
 
