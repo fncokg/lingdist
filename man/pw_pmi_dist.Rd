@@ -14,6 +14,7 @@ pw_pmi_dist(
   max_epochs = 20L,
   tol = 1e-04,
   damping_alpha = 1,
+  smoothing_lambda = 0.001,
   form_strategy = "weighting",
   form_delim = "#",
   form_weights = NULL,
@@ -38,6 +39,8 @@ pw_pmi_dist(
 \item{tol}{Finite positive tolerance for convergence.}
 
 \item{damping_alpha}{Finite update weight in [0, 1]. Each new cost is (1 - damping_alpha) times the previous cost plus damping_alpha times the mapped PMI target. Default 1 applies the full update. Convergence uses the damped change; 0 keeps the initial costs and converges after one iteration.}
+
+\item{smoothing_lambda}{Finite, strictly positive pseudocount for each unordered nonmatching token pair, including character-gap pairs. Applied once after merging all observations. Diagonal pairs receive no prior; with V symbols including the gap, each marginal receives (V - 1) * smoothing_lambda. Default 0.001.}
 
 \item{form_strategy}{How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.}
 

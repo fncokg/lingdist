@@ -4,7 +4,7 @@
 #include <limits>
 #include <stdexcept>
 
-// All counts are in log space to avoid underflow. The number of valid optimal paths can be very large, while the weights (probabilities) are, obviously, very small.
+// Prefix/suffix path counts use logs to avoid overflow. The number of valid optimal paths can be very large, while the weights (probabilities) are, obviously, very small.
 
 namespace lingdist
 {
