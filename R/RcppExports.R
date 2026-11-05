@@ -79,6 +79,7 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' @param tol Finite positive tolerance for convergence.
 #' @param damping_alpha Finite update weight in [0, 1]. Each new cost is (1 - damping_alpha) times the previous cost plus damping_alpha times the mapped PMI target. Default 1 applies the full update. Convergence uses the damped change; 0 keeps the initial costs and converges after one iteration.
 #' @param smoothing_lambda Finite, strictly positive pseudocount for each unordered nonmatching token pair, including character-gap pairs. Applied once after merging all observations. Diagonal pairs receive no prior; with V symbols including the gap, each marginal receives (V - 1) * smoothing_lambda. Default 0.001.
+#' @param min_edit_cost Finite lower bound in (0, 1] for nonmatching costs, including insertions and deletions. Nonconstant negative PMI scores are mapped to [min_edit_cost, 1] before damping; equal scores map to 1. Matching costs remain 0. Default 0.01.
 #' @param form_strategy How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.
 #' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.
 #' @param form_weights Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.
@@ -98,8 +99,8 @@ pw_edit_dist <- function(data, cost_mat = NULL, delim = "", detailed = FALSE, no
 #' forms <- data.frame(word=c("a_b#b", "b_a#a#b"))
 #' result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
 #' result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
-pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, damping_alpha = 1.0, smoothing_lambda = 0.001, form_strategy = "weighting", form_delim = "#", form_weights = NULL, quiet = FALSE) {
-    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, damping_alpha, smoothing_lambda, form_strategy, form_delim, form_weights, quiet)
+pw_pmi_dist <- function(data, delim = "", detailed = FALSE, normalize_method = "longest", squareform = FALSE, n_threads = 4L, max_epochs = 20L, tol = 1e-4, damping_alpha = 1.0, smoothing_lambda = 0.001, min_edit_cost = 0.01, form_strategy = "weighting", form_delim = "#", form_weights = NULL, quiet = FALSE) {
+    .Call(`_lingdist_pw_pmi_dist`, data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, damping_alpha, smoothing_lambda, min_edit_cost, form_strategy, form_delim, form_weights, quiet)
 }
 
 #' Compute Weighted Jaccard Distance between all row pairs of a dataframe

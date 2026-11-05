@@ -69,7 +69,7 @@ namespace
     };
 
     lingdist::IndexedCosts update_costs(const RawAlignmentCounts &counts, const lingdist::IndexedCosts &previous,
-                                        double damping_alpha, double log_smoothing_lambda)
+                                        double damping_alpha, double log_smoothing_lambda, double min_edit_cost)
     {
         if (damping_alpha == 0.0 || counts.nsyms < 2)
             return previous;
@@ -108,11 +108,17 @@ namespace
         for (std::size_t r = 0; r < counts.nsyms; ++r)
             for (std::size_t c = 0; c < r; ++c)
             {
+                // Shift the nonmatching target range to [min_edit_cost, 1].
+                // The zero-filled diagonal remains 0
                 const double target = lingdist::double_equal(min_raw, max_raw)
                                           ? 1.0
-                                          : (scores[counts.index(r, c)] - min_raw) / (max_raw - min_raw);
-                const double value = damping_alpha == 1.0 ? target
-                                                          : (1.0 - damping_alpha) * previous.get(r, c) + damping_alpha * target;
+                                          : min_edit_cost + (1.0 - min_edit_cost) *
+                                                                ((scores[counts.index(r, c)] - min_raw) / (max_raw - min_raw));
+                // Although the damping formula preserves this range mathematically;
+                // we need to clamp it to [min_edit_cost, 1] to avoid possible rounding errors, so as to retain the strictly positive lower bound.
+                const double value = std::clamp(damping_alpha == 1.0 ? target
+                                                                     : (1.0 - damping_alpha) * previous.get(r, c) + damping_alpha * target,
+                                                min_edit_cost, 1.0);
                 values[c * counts.nsyms + r] = value;
                 values[r * counts.nsyms + c] = value;
             }
@@ -125,6 +131,7 @@ namespace lingdist
 {
     List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method,
                 bool squareform, int n_threads, int max_epochs, double tol, double damping_alpha, double smoothing_lambda,
+                double min_edit_cost,
                 const String &form_strategy, const String &form_delim, std::vector<double> form_weights, bool quiet)
     {
         if (max_epochs < 1)
@@ -135,6 +142,8 @@ namespace lingdist
             stop("damping_alpha must be finite and between 0 and 1 inclusive.");
         if (!std::isfinite(smoothing_lambda) || smoothing_lambda <= 0.0)
             stop("smoothing_lambda must be finite and strictly positive.");
+        if (!std::isfinite(min_edit_cost) || min_edit_cost <= 0.0 || min_edit_cost > 1.0)
+            stop("min_edit_cost must be finite and in (0, 1].");
         // Lambda is fixed across epochs. Keep its linear and log meanings distinct.
         const double log_smoothing_lambda = std::log(smoothing_lambda);
         if (n_threads < 1)
@@ -216,7 +225,7 @@ namespace lingdist
                 counts.merge(block.counts); // Stable block order within this call.
             }
             const auto previous = cost; // Shares immutable values, no V-by-V copy.
-            cost = update_costs(counts, previous, damping_alpha, log_smoothing_lambda);
+            cost = update_costs(counts, previous, damping_alpha, log_smoothing_lambda, min_edit_cost);
             sum_diff = 0.0;
             for (std::size_t target = 0; target < symbols.size(); ++target)
                 for (std::size_t source = 0; source < symbols.size(); ++source)

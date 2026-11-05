@@ -56,8 +56,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pw_pmi_dist
-List pw_pmi_dist(const DataFrame& data, const String& delim, bool detailed, const String& normalize_method, bool squareform, int n_threads, int max_epochs, double tol, double damping_alpha, double smoothing_lambda, const String& form_strategy, const String& form_delim, Nullable<NumericVector> form_weights, bool quiet);
-RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP detailedSEXP, SEXP normalize_methodSEXP, SEXP squareformSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP damping_alphaSEXP, SEXP smoothing_lambdaSEXP, SEXP form_strategySEXP, SEXP form_delimSEXP, SEXP form_weightsSEXP, SEXP quietSEXP) {
+List pw_pmi_dist(const DataFrame& data, const String& delim, bool detailed, const String& normalize_method, bool squareform, int n_threads, int max_epochs, double tol, double damping_alpha, double smoothing_lambda, double min_edit_cost, const String& form_strategy, const String& form_delim, Nullable<NumericVector> form_weights, bool quiet);
+RcppExport SEXP _lingdist_pw_pmi_dist(SEXP dataSEXP, SEXP delimSEXP, SEXP detailedSEXP, SEXP normalize_methodSEXP, SEXP squareformSEXP, SEXP n_threadsSEXP, SEXP max_epochsSEXP, SEXP tolSEXP, SEXP damping_alphaSEXP, SEXP smoothing_lambdaSEXP, SEXP min_edit_costSEXP, SEXP form_strategySEXP, SEXP form_delimSEXP, SEXP form_weightsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -71,11 +71,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< double >::type damping_alpha(damping_alphaSEXP);
     Rcpp::traits::input_parameter< double >::type smoothing_lambda(smoothing_lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type min_edit_cost(min_edit_costSEXP);
     Rcpp::traits::input_parameter< const String& >::type form_strategy(form_strategySEXP);
     Rcpp::traits::input_parameter< const String& >::type form_delim(form_delimSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type form_weights(form_weightsSEXP);
     Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
-    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, damping_alpha, smoothing_lambda, form_strategy, form_delim, form_weights, quiet));
+    rcpp_result_gen = Rcpp::wrap(pw_pmi_dist(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, damping_alpha, smoothing_lambda, min_edit_cost, form_strategy, form_delim, form_weights, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -143,7 +144,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_lingdist_string_edit_dist", (DL_FUNC) &_lingdist_string_edit_dist, 9},
     {"_lingdist_pw_edit_dist", (DL_FUNC) &_lingdist_pw_edit_dist, 15},
-    {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 14},
+    {"_lingdist_pw_pmi_dist", (DL_FUNC) &_lingdist_pw_pmi_dist, 15},
     {"_lingdist_pw_wjd", (DL_FUNC) &_lingdist_pw_wjd, 10},
     {"_lingdist_generate_default_cost_matrix", (DL_FUNC) &_lingdist_generate_default_cost_matrix, 3},
     {"_lingdist_long2squareform", (DL_FUNC) &_lingdist_long2squareform, 3},
