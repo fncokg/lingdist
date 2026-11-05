@@ -1,5 +1,6 @@
 #include "dp.hpp"
 #include <algorithm>
+#include <cmath>
 
 #include "helpers.hpp"
 
@@ -109,6 +110,20 @@ namespace lingdist
             if (max_len == 0)
                 return 0.0; // both strings are empty
             return dist / static_cast<double>(max_len);
+        }
+        if (method == "sum")
+        {
+            size_t sum_len = len1 + len2;
+            if (sum_len == 0)
+                return 0.0;
+            return dist / static_cast<double>(sum_len);
+        }
+        if (method == "sqrt_sum")
+        {
+            size_t sum_len = len1 + len2;
+            if (sum_len == 0)
+                return 0.0;
+            return std::sqrt(dist / static_cast<double>(sum_len));
         }
         else
         {
