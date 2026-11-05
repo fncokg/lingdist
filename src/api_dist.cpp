@@ -124,6 +124,7 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' @param n_threads Positive number of threads used for computation. Use 1 for sequential computation.
 //' @param max_epochs Maximum number of epochs; must be at least 1.
 //' @param tol Finite positive tolerance for convergence.
+//' @param damping_alpha Finite update weight in [0, 1]. Each new cost is (1 - damping_alpha) times the previous cost plus damping_alpha times the mapped PMI target. Default 1 applies the full update. Convergence uses the damped change; 0 keeps the initial costs and converges after one iteration.
 //' @param form_strategy How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.
 //' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.
 //' @param form_weights Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.
@@ -144,9 +145,9 @@ DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_N
 //' result <- pw_pmi_dist(forms, delim="_", form_strategy="weighting")
 //' result <- pw_pmi_dist(forms, delim="_", form_strategy="mean_all")
 //[[Rcpp::export]]
-List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, const String &form_strategy = "weighting", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool quiet = false)
+List pw_pmi_dist(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 4, int max_epochs = 20, double tol = 1e-4, double damping_alpha = 1.0, const String &form_strategy = "weighting", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool quiet = false)
 {
-    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol,
+    return lingdist::pmi_df(data, delim, detailed, normalize_method, squareform, n_threads, max_epochs, tol, damping_alpha,
                             form_strategy, form_delim, read_weights(form_weights, "form_weights"), quiet);
 }
 

@@ -64,8 +64,11 @@ namespace
         explicit TrainingBlock(std::size_t symbols) : counts(symbols) {}
     };
 
-    lingdist::IndexedCosts update_costs(const RawAlignmentCounts &counts, const lingdist::SymbolTable &symbols)
+    lingdist::IndexedCosts update_costs(const RawAlignmentCounts &counts, const lingdist::IndexedCosts &previous,
+                                       double damping_alpha)
     {
+        if (damping_alpha == 0.0) return previous;
+        const auto &symbols = previous.symbol_table();
         // Apply the existing independent +1 pair/marginal priors once, after
         // merging all observations. Consistent smoothing is a separate change.
         // Keep raw counts intact rather than overwriting them with PMI scores.
@@ -91,8 +94,13 @@ namespace
         for (std::size_t r = 0; r < counts.nsyms; ++r)
             for (std::size_t c = 0; c < r; ++c)
             {
-                const double value = lingdist::double_equal(min_raw, max_raw)
+                const double target = lingdist::double_equal(min_raw, max_raw)
                     ? 1.0 : (scores[counts.index(r, c)] - min_raw) / (max_raw - min_raw);
+                // Damp the mapped target, so convergence and prediction use
+                // W_next = (1-alpha)*W_previous + alpha*W_target. Keep the
+                // alpha=1 path identical to the original full update.
+                const double value = damping_alpha == 1.0 ? target
+                    : (1.0 - damping_alpha) * previous.get(r, c) + damping_alpha * target;
                 values[c * counts.nsyms + r] = value;
                 values[r * counts.nsyms + c] = value;
             }
@@ -105,11 +113,13 @@ namespace
 namespace lingdist
 {
     List pmi_df(const DataFrame &data, const String &delim, bool detailed, const String &normalize_method,
-                bool squareform, int n_threads, int max_epochs, double tol,
+                bool squareform, int n_threads, int max_epochs, double tol, double damping_alpha,
                 const String &form_strategy, const String &form_delim, std::vector<double> form_weights, bool quiet)
     {
         if (max_epochs < 1) stop("max_epochs must be at least 1.");
         if (!std::isfinite(tol) || tol <= 0.0) stop("tol must be finite and positive.");
+        if (!std::isfinite(damping_alpha) || damping_alpha < 0.0 || damping_alpha > 1.0)
+            stop("damping_alpha must be finite and between 0 and 1 inclusive.");
         if (n_threads < 1) stop("n_threads must be at least 1.");
         if (normalize_method != "longest" && normalize_method != "none")
             stop("Unsupported normalize_method. Supported values are 'longest' and 'none'.");
@@ -185,7 +195,7 @@ namespace lingdist
                 counts.merge(block.counts); // Stable block order within this call.
             }
             const auto previous = cost; // Shares immutable values, no V-by-V copy.
-            cost = update_costs(counts, symbols);
+            cost = update_costs(counts, previous, damping_alpha);
             sum_diff = 0.0;
             for (std::size_t target = 0; target < symbols.size(); ++target)
                 for (std::size_t source = 0; source < symbols.size(); ++source)

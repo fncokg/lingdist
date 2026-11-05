@@ -13,6 +13,7 @@ pw_pmi_dist(
   n_threads = 4L,
   max_epochs = 20L,
   tol = 1e-04,
+  damping_alpha = 1,
   form_strategy = "weighting",
   form_delim = "#",
   form_weights = NULL,
@@ -35,6 +36,8 @@ pw_pmi_dist(
 \item{max_epochs}{Maximum number of epochs; must be at least 1.}
 
 \item{tol}{Finite positive tolerance for convergence.}
+
+\item{damping_alpha}{Finite update weight in [0, 1]. Each new cost is (1 - damping_alpha) times the previous cost plus damping_alpha times the mapped PMI target. Default 1 applies the full update. Convergence uses the damped change; 0 keeps the initial costs and converges after one iteration.}
 
 \item{form_strategy}{How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.}
 

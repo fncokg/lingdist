@@ -9,7 +9,7 @@ using namespace Rcpp;
 
 namespace lingdist
 {
-    List pmi_df(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 2, int max_epochs = 20, double tol = 1e-4, const String &form_strategy = "weighting", const String &form_delim = "#", std::vector<double> form_weights = {}, bool quiet = false);
+    List pmi_df(const DataFrame &data, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", bool squareform = false, int n_threads = 2, int max_epochs = 20, double tol = 1e-4, double damping_alpha = 1.0, const String &form_strategy = "weighting", const String &form_delim = "#", std::vector<double> form_weights = {}, bool quiet = false);
 
     DataFrame edit_dist_df(const DataFrame &data, Nullable<DataFrame> cost_mat, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", std::vector<double> form_weights = {}, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, bool quiet = false, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0);
 
