@@ -19,7 +19,7 @@ namespace lingdist
     We use this to get the sum of two log probabilities without underflowing to zero.
     The result is always finite if at least one of the inputs is finite.
     */
-    double logaddexp(double a, double b)
+    inline double logaddexp(double a, double b)
     {
         if (a == negative_infinity)
             return b;
