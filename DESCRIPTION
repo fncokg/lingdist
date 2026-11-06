@@ -13,7 +13,9 @@ Description: A fast linguistic distance and alignment computation package. It im
 License: GPL (>= 2)
 Imports: Rcpp (>= 1.1.0), RcppThread (>= 2.3.0)
 LinkingTo: Rcpp, RcppThread
+Suggests: testthat (>= 3.0.0)
 URL: https://github.com/fncokg/lingdist
 BugReports: https://github.com/fncokg/lingdist/issues
 Encoding: UTF-8
 Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3

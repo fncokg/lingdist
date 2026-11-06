@@ -1,5 +1,6 @@
 .Rhistory
 .RData
 **.o
+**.so
 **.dll
 .vscode
