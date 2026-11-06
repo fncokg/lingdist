@@ -12,10 +12,10 @@ column names should be the symbols included in the matrix.}
 
 \item{data}{DataFrame containing the tokenized strings; used to extract symbols to check.}
 
-\item{delim}{String delimiter used in `data` to split atomic symbols (empty string means
-split by characters).}
+\item{delim}{Literal delimiter used in `data` to split atomic symbols
+(empty string means split UTF-8 text into Unicode code points).}
 
-\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded.}
+\item{form_delim}{Literal delimiter separating forms within a cell, default "#". Empty forms are discarded.}
 }
 \value{
 A character vector of symbols that are present in `data` but missing from `cost_mat`.

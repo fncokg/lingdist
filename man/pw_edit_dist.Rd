@@ -28,7 +28,7 @@ pw_edit_dist(
 
 \item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.}
 
-\item{delim}{The delimiter separating atomic symbols.}
+\item{delim}{Literal delimiter separating atomic symbols. Empty splits UTF-8 text into Unicode code points.}
 
 \item{detailed}{Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.}
 
@@ -36,7 +36,7 @@ pw_edit_dist(
 
 \item{form_strategy}{How to combine word forms: off (default), weighting, mean_all, min_all, or first.}
 
-\item{form_delim}{The delimiter separating word forms when form_strategy is not off.}
+\item{form_delim}{Literal delimiter separating word forms when form_strategy is not off.}
 
 \item{form_weights}{Finite, non-negative weights covering all observed forms for weighting. NULL generates weights 1, 0.5, 0.25, ... to the required length. An all-zero effective weight sum returns NA.}
 

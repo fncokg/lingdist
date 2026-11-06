@@ -1,4 +1,5 @@
 #include "prepare_input.hpp"
+#include "text.hpp"
 
 namespace lingdist
 {
@@ -7,8 +8,8 @@ namespace lingdist
     {
         const auto rows = split_df2(data, form_delim, delim, !split_forms);
         const Rcpp::CharacterVector labels = data.attr("row.names");
-        return encode_input(rows, Rcpp::as<StrVec>(labels),
-                            Rcpp::as<StrVec>(data.names()));
+        return encode_input(rows, to_utf8(labels),
+                            to_utf8(Rcpp::CharacterVector(data.names())));
     }
 
 }

@@ -3,6 +3,7 @@
 
 #include "helpers.hpp"
 #include "dispatcher.hpp"
+#include "text.hpp"
 
 using namespace Rcpp;
 
@@ -65,6 +66,6 @@ namespace lingdist
         };
         RcppThread::parallelFor(0, static_cast<std::int32_t>(n_row_pairs), loop_body, n_threads);
 
-        return gen_dist_df(dists_vec, lab1Col, lab2Col, detailed, as<StrVec>(data.names()), squareform, true);
+        return gen_dist_df(dists_vec, lab1Col, lab2Col, detailed, to_utf8(CharacterVector(data.names())), squareform, true);
     }
 }

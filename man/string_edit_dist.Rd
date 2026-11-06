@@ -23,7 +23,7 @@ string_edit_dist(
 
 \item{cost_mat}{Dataframe in squareform indicating the cost values when one symbol is deleted, inserted or substituted by another. Rownames and colnames are symbols. `cost_mat[char1,"_NULL_"]` indicates the cost value of deleting char1 and `cost_mat["_NULL_",char1]` is the cost value of inserting it. When an operation is not defined in the cost_mat, it is set 0 when the two symbols are the same, otherwise 1. When `cost_mat` is NULL, general cost rules are used: substitution cost is `default_sub_cost` if the two symbols are different and 0 if they are the same; insertion and deletion cost is `default_ins_del_cost`.}
 
-\item{delim}{The delimiter in `str1` and `str2` separating atomic symbols.}
+\item{delim}{Literal delimiter in `str1` and `str2` separating atomic symbols. Empty splits UTF-8 text into Unicode code points, not grapheme clusters.}
 
 \item{normalize_method}{Method to normalize the distance. Can be "longest" (default) to normalize by the length of the longer string, or "none" to return the raw distance without normalization.}
 

@@ -25,7 +25,7 @@ pw_pmi_dist(
 \arguments{
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
-\item{delim}{The delimiter separating atomic symbols.}
+\item{delim}{Literal delimiter separating atomic symbols. Empty splits UTF-8 text into Unicode code points.}
 
 \item{detailed}{Whether to return detailed information. When FALSE (default), returns the average distance across all columns (words) for each row pair. When TRUE, returns column-wise distances for each row pair, showing how distance varies across words.}
 
@@ -47,7 +47,7 @@ pw_pmi_dist(
 
 \item{form_strategy}{How to pair forms in both training and prediction: "weighting" (default) pads by repeating the last form and normalizes position weights within each cell pair; "mean_all" averages all combinations; "first" selects the first form; "off" disables form splitting. "min_all" is not supported for PMI training.}
 
-\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.}
+\item{form_delim}{Literal delimiter separating forms within a cell, default "#". Empty forms are discarded before pairing.}
 
 \item{form_weights}{Finite, non-negative position weights for "weighting". NULL generates 1, 0.5, 0.25, ... . The used prefix is normalized separately for each cell pair. Zero effective weight makes the cell pair invalid for both training and prediction.}
 

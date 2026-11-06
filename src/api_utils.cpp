@@ -3,6 +3,7 @@
 #include "helpers.hpp"
 #include "cost_io.hpp"
 #include "prepare_input.hpp"
+#include "text.hpp"
 
 using namespace Rcpp;
 
@@ -11,8 +12,8 @@ using namespace Rcpp;
 //' Generate a default cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1. This avoids constructing the matrix from scratch.
 //'
 //' @param data DataFrame to be computed.
-//' @param delim The delimiter separating atomic symbols.
-//' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
+//' @param delim Literal delimiter separating atomic symbols. Empty splits UTF-8 text into Unicode code points.
+//' @param form_delim Literal delimiter separating forms within a cell, default "#". Empty forms are discarded.
 //' @return Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
@@ -51,9 +52,9 @@ DataFrame long2squareform(const DataFrame &data, bool symmetric = true, double d
 //' @param cost_mat DataFrame representing a cost matrix in square form. Row names and
 //'   column names should be the symbols included in the matrix.
 //' @param data DataFrame containing the tokenized strings; used to extract symbols to check.
-//' @param delim String delimiter used in `data` to split atomic symbols (empty string means
-//'   split by characters).
-//' @param form_delim Delimiter separating forms within a cell, default "#". Empty forms are discarded.
+//' @param delim Literal delimiter used in `data` to split atomic symbols
+//'   (empty string means split UTF-8 text into Unicode code points).
+//' @param form_delim Literal delimiter separating forms within a cell, default "#". Empty forms are discarded.
 //' @return A character vector of symbols that are present in `data` but missing from `cost_mat`.
 //' @examples
 //' cost.mat <- data.frame()
@@ -64,5 +65,5 @@ StringVector check_cost_mat_symbols(const DataFrame &cost_mat, const DataFrame &
 {
     const auto input = lingdist::prepare_input(data, delim, form_delim);
     const auto missing_symbols = lingdist::missing_cost_symbols(input.symbol_table(), cost_mat);
-    return StringVector::import(missing_symbols.begin(), missing_symbols.end());
+    return lingdist::wrap_utf8(missing_symbols);
 }

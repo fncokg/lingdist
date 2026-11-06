@@ -1,4 +1,5 @@
 #include "cost_io.hpp"
+#include "text.hpp"
 
 #include <cmath>
 #include <limits>
@@ -28,7 +29,7 @@ namespace
             for (const auto name : names)
                 if (Rcpp::CharacterVector::is_na(name))
                     throw std::invalid_argument("Cost matrix names must not be missing.");
-        MatrixNames result{Rcpp::as<lingdist::StrVec>(rows), Rcpp::as<lingdist::StrVec>(columns)};
+        MatrixNames result{lingdist::to_utf8(rows), lingdist::to_utf8(columns)};
         const std::set<std::string> row_set(result.rows.begin(), result.rows.end());
         const std::set<std::string> col_set(result.columns.begin(), result.columns.end());
         if (row_set.size() != result.rows.size() || col_set.size() != result.columns.size())
@@ -84,8 +85,8 @@ namespace lingdist
                 column[source] = costs.get(source, target);
             columns[target] = column;
         }
-        columns.attr("names") = Rcpp::wrap(costs.symbol_table().names());
-        columns.attr("row.names") = Rcpp::wrap(costs.symbol_table().names());
+        columns.attr("names") = wrap_utf8(costs.symbol_table().names());
+        columns.attr("row.names") = wrap_utf8(costs.symbol_table().names());
         columns.attr("class") = "data.frame";
         return Rcpp::DataFrame(columns);
     }

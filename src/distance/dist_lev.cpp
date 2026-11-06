@@ -72,8 +72,8 @@ namespace lingdist
         StringVector labels1(pairs.size()), labels2(pairs.size());
         for (std::size_t i = 0; i < pairs.size(); ++i)
         {
-            labels1[i] = input.row_names()[pairs[i].source];
-            labels2[i] = input.row_names()[pairs[i].target];
+            labels1[i] = Rcpp::String(input.row_names()[pairs[i].source], CE_UTF8);
+            labels2[i] = Rcpp::String(input.row_names()[pairs[i].target], CE_UTF8);
         }
 
         // How to compute the distance for a single directed word pair from scratch (i.e. not from cache).

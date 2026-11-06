@@ -81,8 +81,8 @@ namespace lingdist
                 char1 = path[j].first;
                 char2 = path[j].second;
                 const std::string opt = char1 == GAP_TOKEN_ID ? "insert" : (char2 == GAP_TOKEN_ID ? "delete" : (char1 == char2 ? "same" : "substitute"));
-                chars1_col.push_back(cost.symbol_table().name(char1));
-                chars2_col.push_back(cost.symbol_table().name(char2));
+                chars1_col.push_back(Rcpp::String(cost.symbol_table().name(char1), CE_UTF8));
+                chars2_col.push_back(Rcpp::String(cost.symbol_table().name(char2), CE_UTF8));
                 operation_col.push_back(opt);
                 cost_col.push_back(cost.get(char1, char2));
             }

@@ -40,7 +40,7 @@ namespace lingdist
 
     // --- String Utils ---
 
-    // Split a single Rcpp String by a delimiter String into StrVec
+    // Convert R text to UTF-8 and split by a literal delimiter; empty means code points.
     StrVec split(const Rcpp::String &target, const Rcpp::String &delim);
 
     std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1);

@@ -1,5 +1,6 @@
 #include "helpers.hpp"
 #include "symbol_table.hpp"
+#include "text.hpp"
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -38,20 +39,21 @@ namespace lingdist
         return dists;
     }
 
-    // TODO: This is heavy, optimize later
     StrVec split(const String &target, const String &delim)
     {
         // Preserve missingness before converting R strings to std::string.
         if (target == NA_STRING || target == "")
             return {};
-        Function r_split("strsplit");
-        List res = r_split(target, delim);
-        return res[0];
+        return split_utf8(to_utf8(target), to_utf8(delim));
     }
 
     std::vector<std::vector<std::vector<StrVec>>> split_df2(const DataFrame &data, const String &delim1, const String &delim2, bool ignore_delim1)
     {
         int nrows = data.nrow(), ncols = data.ncol();
+        // Convert each delimiter once, then split both forms and tokens without
+        // constructing temporary R strings or calling back into the R evaluator.
+        const auto form_delimiter = ignore_delim1 ? std::string{} : to_utf8(delim1);
+        const auto token_delimiter = to_utf8(delim2);
         std::vector<std::vector<std::vector<StrVec>>> rows_vector;
         rows_vector.reserve(nrows);
         for (int i = 0; i < nrows; i++)
@@ -62,20 +64,23 @@ namespace lingdist
             {
                 const CharacterVector col = data[j];
                 std::vector<StrVec> cell_vector;
-                if (ignore_delim1)
+                if (!CharacterVector::is_na(col[i]))
                 {
-                    auto tokens = split(col[i], delim2);
-                    // For empty cells, we keep `cell_vector` empty, instead of adding an empty `StrVec`, because we check `cell_vector.empty()` later to determine whether to compute distance for this cell.
-                    if (!tokens.empty())
-                        cell_vector.push_back(std::move(tokens));
-                }
-                else
-                {
-                    for (auto &part : split(col[i], delim1))
+                    const auto text = to_utf8(String(col[i]));
+                    if (ignore_delim1)
                     {
-                        auto tokens = split(part, delim2);
+                        auto tokens = split_utf8(text, token_delimiter);
                         if (!tokens.empty())
                             cell_vector.push_back(std::move(tokens));
+                    }
+                    else
+                    {
+                        for (const auto &part : split_utf8(text, form_delimiter))
+                        {
+                            auto tokens = split_utf8(part, token_delimiter);
+                            if (!tokens.empty())
+                                cell_vector.push_back(std::move(tokens));
+                        }
                     }
                 }
                 row_vector.push_back(std::move(cell_vector));
@@ -89,7 +94,7 @@ namespace lingdist
     {
         int nrows = data.nrow();
         int npairs = symmetric ? nrows * (nrows - 1) / 2 : nrows * nrows;
-        CharacterVector rownames = data.attr("row.names");
+        CharacterVector rownames = wrap_utf8(to_utf8(CharacterVector(data.attr("row.names"))));
         StringVector lab1Col(npairs), lab2Col(npairs);
 
         std::vector<std::pair<int, int>> row_pairs(npairs);
@@ -181,8 +186,12 @@ namespace lingdist
                 {
                     dist_vec[j] = dists_vec[j][i];
                 }
-                result.push_back(dist_vec, col_names[i]);
+                result.push_back(dist_vec);
             }
+            // std::string wrapping otherwise marks bytes as native encoding.
+            StrVec names{"lab1", "lab2"};
+            names.insert(names.end(), col_names.begin(), col_names.end());
+            result.attr("names") = wrap_utf8(names);
         }
         else
         {

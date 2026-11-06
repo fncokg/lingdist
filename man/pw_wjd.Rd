@@ -20,13 +20,13 @@ pw_wjd(
 \arguments{
 \item{data}{DataFrame with n rows and m columns indicating there are n languages or dialects to involve in the calculation and there are at most m words to base on, in which the rownames are the language ids.}
 
-\item{cate_delim}{The delimiter separating different levels of categories within a word form. Default is "_".}
+\item{cate_delim}{Literal delimiter separating different levels of categories within a word form. Default is "_".}
 
 \item{cate_weights}{Numeric vector of weights for different levels of categories for a single word form. For example, if a word form is "A_2_a", the first weight applies to "A", the second to "2", and the third to "a". Weights must be finite, non-negative, and cover all observed levels. NULL generates weights 1, 0.5, 0.25, ... to the required depth.}
 
 \item{form_strategy}{How to combine word forms: weighting, mean_all, min_all, first, or off.}
 
-\item{form_delim}{The delimiter separating different word forms of a single lexical item. Default is "#".}
+\item{form_delim}{Literal delimiter separating different word forms of a single lexical item. Default is "#".}
 
 \item{form_weights}{Numeric vector of weights for different word forms of a single lexical item (ordered). For example, if a lexical item is "A_2_a#A_3#B_5_c", the first weight applies to "A_2_a", the second to "A_3", etc. Weights must be finite, non-negative, and cover all observed forms. NULL generates weights 1, 0.5, 0.25, ... to the required length.}
 

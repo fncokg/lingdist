@@ -9,9 +9,9 @@ generate_default_cost_matrix(data, delim = "", form_delim = "#")
 \arguments{
 \item{data}{DataFrame to be computed.}
 
-\item{delim}{The delimiter separating atomic symbols.}
+\item{delim}{Literal delimiter separating atomic symbols. Empty splits UTF-8 text into Unicode code points.}
 
-\item{form_delim}{Delimiter separating forms within a cell, default "#". Empty forms are discarded.}
+\item{form_delim}{Literal delimiter separating forms within a cell, default "#". Empty forms are discarded.}
 }
 \value{
 Cost matrix containing all possible characters in the raw data with all diagonal values set to 0 and others set to 1.
