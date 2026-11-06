@@ -86,23 +86,25 @@ List string_edit_dist(const String &str1, const String &str2, Nullable<DataFrame
 //' @param default_sub_cost Default substitution cost when `cost_mat` is NULL.
 //' @param default_ins_del_cost Default insertion and deletion cost when `cost_mat` is NULL.
 //' @param quiet Whether to suppress all output messages.
+//' @param cache Whether to precompute and reuse distances for unique directed word pairs within this call. Default FALSE skips caching. TRUE can speed up data with repeated word forms, at the cost of task planning and extra memory; small or low-repetition data may be faster with FALSE.
 //' @return A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
 //' @examples
 //' df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 //' df2 <- as.data.frame(rbind(a=c("ph_l_i_z#b_l_i_s","k_o_l"),b=c("b_l_i_s", "k_a:_l#k_o")))
 //' cost.mat <- data.frame()
 //' result <- pw_edit_dist(df, delim="_")
+//' result <- pw_edit_dist(df, delim="_", cache=TRUE)
 //' result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 //' result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)
 //' result <- pw_edit_dist(df2, cost_mat=cost.mat, delim="_", form_strategy="weighting", form_delim="#", form_weights=c(0.7, 0.3))
 //[[Rcpp::export]]
-DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false)
+DataFrame pw_edit_dist(const DataFrame &data, Nullable<DataFrame> cost_mat = R_NilValue, const String &delim = "", bool detailed = false, const String &normalize_method = "longest", const String &form_strategy = "off", const String &form_delim = "#", Nullable<NumericVector> form_weights = R_NilValue, bool squareform = false, bool symmetric = true, int n_threads = 2, bool check_missing_cost = true, double default_sub_cost = 1.0, double default_ins_del_cost = 1.0, bool quiet = false, bool cache = false)
 {
     const auto form_weights_vec = read_weights(form_weights, "form_weights");
     return lingdist::edit_dist_df(data, cost_mat, delim, detailed, normalize_method, form_strategy,
                                   form_delim, form_weights_vec, squareform, symmetric, n_threads,
-                                  check_missing_cost, quiet, default_sub_cost, default_ins_del_cost);
+                                  check_missing_cost, quiet, default_sub_cost, default_ins_del_cost, cache);
 }
 
 //' Compute PMI distance between all row pairs of a dataframe

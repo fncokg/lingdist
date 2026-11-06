@@ -8,8 +8,8 @@
 #include "dp.hpp"
 #include "expected_counts.hpp"
 #include "dist.hpp"
+#include "parallel.hpp"
 #include <algorithm>
-#include <exception>
 #include <thread>
 
 using namespace Rcpp;
@@ -63,7 +63,6 @@ namespace
     {
         lingdist::ExpectedCountWorkspace workspace;
         RawAlignmentCounts counts;
-        std::exception_ptr error;
 
         explicit TrainingBlock(std::size_t symbols) : counts(symbols) {}
     };
@@ -162,6 +161,10 @@ namespace lingdist
         const auto &symbols = input.symbol_table();
         auto cost = IndexedCosts::uniform(symbols);
         RawAlignmentCounts counts(symbols.size());
+
+        // Here in PMI, different with the standard edit distance, we divide all tasks into several blocks, instead of parallel for all tasks.
+        // This is because we may need to accumulate the same `sym_counts` after every DP alignment, which is not thread-safe.
+        // So we divide all tasks into several blocks, and each block will accumulate its own `sym_counts`, and then we merge them after all blocks are done.
         const auto available = std::max(1u, std::thread::hardware_concurrency());
         const auto block_count = std::min({plan.tasks.size(), static_cast<std::size_t>(n_threads),
                                            static_cast<std::size_t>(available)});
@@ -169,6 +172,7 @@ namespace lingdist
         blocks.reserve(block_count);
         for (std::size_t i = 0; i < block_count; ++i)
             blocks.emplace_back(symbols.size());
+
         if (!quiet)
             Rprintf("Starting PMI iterations with %llu weighted word-pair tasks and %d symbols.\n",
                     static_cast<unsigned long long>(plan.tasks.size()), static_cast<int>(symbols.size()));
@@ -182,46 +186,35 @@ namespace lingdist
             std::unique_ptr<SafeProgressBar> bar;
             if (!quiet)
                 bar = std::make_unique<SafeProgressBar>(plan.tasks.size(), 1);
-            RcppThread::parallelFor(0, static_cast<int>(block_count), [&](int block_id)
-                                    {
+            parallel_for_checked(block_count, [&](std::size_t block_id)
+                                 {
                 auto &block = blocks[block_id];
                 block.counts.clear();
-                block.error = nullptr;
                 // Each numbered block owns its counts and scratch arrays,
                 // regardless of which pool thread happens to execute it.
                 const auto width = plan.tasks.size() / block_count;
                 const auto remainder = plan.tasks.size() % block_count;
-                const auto id = static_cast<std::size_t>(block_id);
-                const auto begin = id * width + std::min(id, remainder);
-                const auto end = begin + width + (id < remainder ? 1 : 0);
-                try
+                const auto begin = block_id * width + std::min(block_id, remainder);
+                const auto end = begin + width + (block_id < remainder ? 1 : 0);
+                for (auto i = begin; i < end; ++i)
                 {
-                    for (auto i = begin; i < end; ++i)
-                    {
-                        if (RcppThread::isInterrupted()) return;
-                        const auto &task = plan.tasks[i];
-                        accumulate_expected_alignment_counts(input.word(task.pair.source), input.word(task.pair.target),
-                            cost, block.workspace, [&](TokenId a, TokenId b, double probability)
-                            {
-                                // Form weights are already normalized per cell.
-                                // Path averaging is entirely inside probability.
-                                block.counts.add(a, b, task.weight * probability);
-                            });
-                        if (bar) (*bar)++;
-                    }
-                }
-                catch (...)
-                {
-                    // C++ kernel failures must reach Rcpp on the calling thread,
-                    // rather than escape a pool worker and terminate R.
-                    block.error = std::current_exception();
+                    // One parallel iteration owns a whole block, so also poll
+                    // between its word-pair tasks for responsive cancellation.
+                    if (RcppThread::isInterrupted()) return;
+                    const auto &task = plan.tasks[i];
+                    accumulate_expected_alignment_counts(input.word(task.pair.source), input.word(task.pair.target),
+                        cost, block.workspace, [&](TokenId a, TokenId b, double probability)
+                        {
+                            // Form weights are already normalized per cell.
+                            // Path averaging is entirely inside probability.
+                            block.counts.add(a, b, task.weight * probability);
+                        });
+                    if (bar) (*bar)++;
                 } }, n_threads);
 
             counts.clear();
             for (const auto &block : blocks)
             {
-                if (block.error)
-                    std::rethrow_exception(block.error);
                 counts.merge(block.counts); // Stable block order within this call.
             }
             const auto previous = cost; // Shares immutable values, no V-by-V copy.

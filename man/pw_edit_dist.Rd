@@ -19,7 +19,8 @@ pw_edit_dist(
   check_missing_cost = TRUE,
   default_sub_cost = 1,
   default_ins_del_cost = 1,
-  quiet = FALSE
+  quiet = FALSE,
+  cache = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ pw_edit_dist(
 \item{default_ins_del_cost}{Default insertion and deletion cost when `cost_mat` is NULL.}
 
 \item{quiet}{Whether to suppress all output messages.}
+
+\item{cache}{Whether to precompute and reuse distances for unique directed word pairs within this call. Default FALSE skips caching. TRUE can speed up data with repeated word forms, at the cost of task planning and extra memory; small or low-repetition data may be faster with FALSE.}
 }
 \value{
 A dataframe in long table form if `squareform` is FALSE, otherwise in squareform. If `symmetric` is TRUE, the long table form has \eqn{C_n^2} rows, otherwise \eqn{n^2} rows.
@@ -64,6 +67,7 @@ df <- as.data.frame(rbind(a=c("ph_l_i_z","k_o_l"),b=c("b_l_i_s", "k_a:_l")))
 df2 <- as.data.frame(rbind(a=c("ph_l_i_z#b_l_i_s","k_o_l"),b=c("b_l_i_s", "k_a:_l#k_o")))
 cost.mat <- data.frame()
 result <- pw_edit_dist(df, delim="_")
+result <- pw_edit_dist(df, delim="_", cache=TRUE)
 result <- pw_edit_dist(df, delim="_", default_sub_cost=2.0, default_ins_del_cost=1.5)
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_")
 result <- pw_edit_dist(df, cost_mat=cost.mat, delim="_", squareform=TRUE)

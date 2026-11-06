@@ -27,24 +27,24 @@ expect_golden_pmi <- function(actual, expected) {
 }
 
 test_that("default edit distances match the reviewed gold standard", {
-    for (n_threads in c(1L, 2L)) {
+    for (cache in c(FALSE, TRUE)) for (n_threads in c(1L, 2L)) {
         actual <- pw_edit_dist(
             golden_edit$input, delim = "_", normalize_method = "longest",
             form_strategy = "off", symmetric = TRUE, detailed = FALSE,
             squareform = FALSE, default_sub_cost = 1, default_ins_del_cost = 1,
-            n_threads = n_threads, quiet = TRUE
+            n_threads = n_threads, quiet = TRUE, cache = cache
         )
         expect_golden_distances(actual, golden_edit$expected)
     }
 })
 
 test_that("custom edit costs match the reviewed directed distances", {
-    for (n_threads in c(1L, 2L)) {
+    for (cache in c(FALSE, TRUE)) for (n_threads in c(1L, 2L)) {
         actual <- pw_edit_dist(
             golden_custom_edit$input, cost_mat = golden_custom_edit$cost,
             delim = "_", normalize_method = "longest", form_strategy = "off",
             symmetric = FALSE, detailed = FALSE, squareform = FALSE,
-            n_threads = n_threads, quiet = TRUE
+            n_threads = n_threads, quiet = TRUE, cache = cache
         )
         expect_golden_distances(actual, golden_custom_edit$expected)
     }

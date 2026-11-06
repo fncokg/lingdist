@@ -64,6 +64,8 @@ result <- pw_edit_dist(df, cost_mat = NULL, delim = "_", n_threads = 4)
 
 In this call, parallel computation is enabled and 4 threads are used in the computation.
 
+For data with possibly many repeated word forms, use `pw_edit_dist(df, delim = "_", n_threads = 4, cache = TRUE)` to compute each unique directed word-pair distance once per call. Caching is disabled by default: it uses extra memory and may be slower for small datasets or data with little repetition.
+
 ## Pairwise PMI distances
 
 To compute PMI distances which learn costs from the data:
