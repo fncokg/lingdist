@@ -1,3 +1,17 @@
+# lingdist 3.1.0 2026-11-06
+
+New features:
+- Added optional word-pair caching to `pw_edit_dist()` (`cache = TRUE`; disabled by default), this is helpful for data with many repeated word forms.
+
+Enhancements:
+- Reduced memory use for averaged edit-distance results.
+- Switched to a pure C++ implementation of string splitting (~10x faster).
+- Added unified parallel error and interrupt handling
+- Added gold-standard regression tests.
+
+Bug fixes:
+- Fixed possibly incorrect regex matching of delimiters in all distance functions; delimiters now match literal strings rather than regular expressions. Usage of default delimiters `_` and `#` are not affected.
+
 # lingdist 3.0.0 2026-11-05
 
 **Important:** This release fixes multiple serious bugs in the PMI algorithm. **PMI results produced by any version before 3.0.0 are unreliable and should be recomputed.**
